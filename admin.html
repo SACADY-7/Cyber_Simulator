@@ -362,5 +362,32 @@ function exportCSV(){
 setInterval(loadAdminData, 15000);
 window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;});
 </script>
+  <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  orderBy,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyALDA8Ml23lZnUaiDTZF2AaZC2gnjx4-8I",
+  authDomain: "cyber-rescue-ops.firebaseapp.com",
+  projectId: "cyber-rescue-ops",
+  storageBucket: "cyber-rescue-ops.firebasestorage.app",
+  messagingSenderId: "12878094017",
+  appId: "1:12878094017:web:e1caf6bd006beeb49a7e40"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+console.log("Firebase + Firestore Connected");
+</script>
 </body>
 </html>
