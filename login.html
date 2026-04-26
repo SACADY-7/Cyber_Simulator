@@ -58,9 +58,7 @@
     content:'';position:absolute;top:0;left:0;right:0;height:2px;
     background:linear-gradient(90deg,transparent,var(--neon-blue),transparent);
   }
-  .corner {
-    position:absolute;width:16px;height:16px;border-color:var(--neon-blue);border-style:solid;
-  }
+  .corner { position:absolute;width:16px;height:16px;border-color:var(--neon-blue);border-style:solid; }
   .corner-tl{top:8px;left:8px;border-width:2px 0 0 2px;}
   .corner-tr{top:8px;right:8px;border-width:2px 2px 0 0;}
   .corner-bl{bottom:8px;left:8px;border-width:0 0 2px 2px;}
@@ -77,9 +75,7 @@
     margin-bottom:28px;
   }
 
-  .field {
-    margin-bottom:20px;
-  }
+  .field { margin-bottom:20px; }
   .field label {
     font-family:'Share Tech Mono',monospace;
     font-size:10px;letter-spacing:3px;color:var(--text-dim);
@@ -117,9 +113,7 @@
   .field.error input { border-color:var(--neon-red); }
   .field.error .error-msg { display:block; }
 
-  .team-id-wrap {
-    position:relative;
-  }
+  .team-id-wrap { position:relative; }
   .team-id-wrap input { padding-right:100px; }
   .gen-btn {
     position:absolute;right:8px;top:50%;transform:translateY(-50%);
@@ -150,6 +144,7 @@
   }
   .submit-btn:hover::before { left:100%; }
   .submit-btn:hover { box-shadow:0 0 25px rgba(0,212,255,0.4); color:#fff; }
+  .submit-btn:disabled { opacity:0.5; cursor:not-allowed; }
 
   .back-link {
     text-align:center;margin-top:20px;
@@ -160,7 +155,6 @@
   .back-link a { color:var(--neon-blue);text-decoration:none; }
   .back-link a:hover { text-shadow:0 0 10px var(--neon-blue); }
 
-  /* Security grid */
   .security-bar {
     display:flex;align-items:center;gap:10px;
     margin:20px 0;padding:12px 16px;
@@ -172,7 +166,6 @@
   @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
   .security-bar span { font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--neon-green);letter-spacing:2px; }
 
-  /* Toast */
   .toast {
     position:fixed;bottom:30px;right:30px;z-index:100;
     padding:16px 24px;
@@ -188,7 +181,6 @@
   .toast.show { transform:translateY(0);opacity:1; }
   .toast.success { border-color:var(--neon-green);color:var(--neon-green);background:rgba(0,255,136,0.05); }
 
-  /* Loading overlay */
   .loading-overlay {
     display:none;position:fixed;inset:0;z-index:50;
     background:rgba(2,8,17,0.9);
@@ -200,9 +192,7 @@
     font-family:'Orbitron',sans-serif;font-size:14px;letter-spacing:4px;
     color:var(--neon-blue);margin-bottom:20px;
   }
-  .loader-bar {
-    width:300px;height:3px;background:rgba(0,212,255,0.1);overflow:hidden;
-  }
+  .loader-bar { width:300px;height:3px;background:rgba(0,212,255,0.1);overflow:hidden; }
   .loader-fill {
     height:100%;background:var(--neon-blue);
     animation:loadFill 2s linear forwards;
@@ -238,7 +228,7 @@
       <span>ENCRYPTED CONNECTION — TLS 1.3 — SENTINEL NETWORK</span>
     </div>
 
-    <form id="loginForm" onsubmit="handleSubmit(event)">
+    <div id="loginForm">
       <div class="field" id="f-teamName">
         <label>TEAM DESIGNATION</label>
         <input type="text" id="teamName" placeholder="e.g. GHOST_PROTOCOL" maxlength="30">
@@ -280,10 +270,10 @@
         <div class="error-msg">Leader name required</div>
       </div>
 
-      <button type="submit" class="submit-btn" id="submitBtn">
+      <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">
         ▶ AUTHENTICATE & DEPLOY
       </button>
-    </form>
+    </div>
   </div>
 
   <div class="back-link">
@@ -298,8 +288,25 @@
 
 <div class="toast" id="toast"></div>
 
-<script>
-// Matrix
+<script type="module">
+// ── Firebase imports ──────────────────────────────────────────
+import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp }
+                             from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// 🔥 PASTE YOUR CONFIG HERE (same as firebase.js)
+const firebaseConfig = {
+  apiKey: "AIzaSyALDA8Ml23lZnUaiDTZF2AaZC2gnjx4-8I",
+  authDomain: "cyber-rescue-ops.firebaseapp.com",
+  projectId: "cyber-rescue-ops",
+  storageBucket: "cyber-rescue-ops.firebasestorage.app",
+  messagingSenderId: "12878094017",
+  appId: "1:12878094017:web:e1caf6bd006beeb49a7e40"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ── Matrix background ─────────────────────────────────────────
 const canvas = document.getElementById('matrix-canvas');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth; canvas.height = window.innerHeight;
@@ -317,82 +324,102 @@ function drawMatrix(){
 }
 setInterval(drawMatrix,50);
 
-function generateId() {
+// ── Helpers ───────────────────────────────────────────────────
+window.generateId = function(){
   const prefix = ['SEN','CYB','SEC','OPS','DEF'][Math.floor(Math.random()*5)];
   const num = Math.floor(Math.random()*9000)+1000;
   document.getElementById('teamId').value = prefix+'-'+num;
-}
+};
 
-function showToast(msg, type='error') {
+function showToast(msg, type='error'){
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'toast' + (type==='success'?' success':'');
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 3000);
+  setTimeout(()=>t.classList.remove('show'), 3500);
 }
 
-function validateField(id, fieldId, minLen=1) {
+function validateField(id, fieldId, minLen=1){
   const val = document.getElementById(id).value.trim();
   const field = document.getElementById(fieldId);
-  if(!val || val.length < minLen) {
-    field.classList.add('error'); return false;
-  }
+  if(!val || val.length < minLen){ field.classList.add('error'); return false; }
   field.classList.remove('error'); return true;
 }
 
-function handleSubmit(e) {
-  e.preventDefault();
+// ── Submit handler ────────────────────────────────────────────
+window.handleSubmit = async function(){
   let valid = true;
   if(!validateField('teamName','f-teamName',3)) valid=false;
   if(!validateField('school','f-school',2)) valid=false;
   if(!validateField('teamId','f-teamId',3)) valid=false;
   if(!validateField('leader','f-leader',2)) valid=false;
   const players = document.getElementById('players').value;
-  if(!players) {
-    document.getElementById('f-players').classList.add('error');
-    valid=false;
-  } else document.getElementById('f-players').classList.remove('error');
-  if(!valid) { showToast('⚠ AUTHENTICATION FAILED — CHECK CREDENTIALS'); return; }
+  if(!players){ document.getElementById('f-players').classList.add('error'); valid=false; }
+  else document.getElementById('f-players').classList.remove('error');
+  if(!valid){ showToast('⚠ AUTHENTICATION FAILED — CHECK CREDENTIALS'); return; }
 
-  // Save team data
-  const teamData = {
-    teamName: document.getElementById('teamName').value.trim(),
-    school: document.getElementById('school').value.trim(),
-    teamId: document.getElementById('teamId').value.trim().toUpperCase(),
-    leader: document.getElementById('leader').value.trim(),
-    players: parseInt(players),
-    startTime: Date.now(),
-    score: 1000,
-    level: 1,
-    hintsUsed: 0,
-    wrongAnswers: 0,
-    threatLevel: 0
-  };
+  const teamId = document.getElementById('teamId').value.trim().toUpperCase();
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
 
-  // Check duplicate in localStorage
-  const existing = JSON.parse(localStorage.getItem('cure_teams') || '{}');
-  if(existing[teamData.teamId] && existing[teamData.teamId].active) {
-    showToast('⚠ TEAM ID ALREADY IN USE — GENERATE A NEW ID');
+  // Check if team ID already exists in Firestore
+  try {
+    const snap = await getDoc(doc(db, 'teams', teamId));
+    if(snap.exists() && snap.data().active){
+      showToast('⚠ TEAM ID ALREADY IN USE — GENERATE A NEW ID');
+      submitBtn.disabled = false;
+      return;
+    }
+  } catch(err){
+    console.error('Firestore check error:', err);
+    showToast('⚠ CONNECTION ERROR — CHECK FIREBASE CONFIG');
+    submitBtn.disabled = false;
     return;
   }
 
-  // Show loading
+  const teamData = {
+    teamName: document.getElementById('teamName').value.trim(),
+    school:   document.getElementById('school').value.trim(),
+    teamId,
+    leader:   document.getElementById('leader').value.trim(),
+    players:  parseInt(players),
+    score:    1000,
+    currentLevel: 1,
+    hintsUsed:    0,
+    wrongAnswers: 0,
+    threatLevel:  0,
+    intelFragments: [],
+    active:   true,
+    joinedAt: serverTimestamp()
+  };
+
+  // Show loading animation
   const overlay = document.getElementById('loadingOverlay');
   overlay.classList.add('active');
   const msgs = ['AUTHENTICATING TEAM...','ESTABLISHING SECURE LINK...','DEPLOYING SENTINEL PROTOCOLS...','ACCESS GRANTED — WELCOME, SENTINEL'];
   let mi = 0;
-  const msgInt = setInterval(()=>{
-    if(mi<msgs.length-1) document.getElementById('loaderMsg').textContent=msgs[++mi];
-    else {
+  const msgInt = setInterval(async ()=>{
+    if(mi < msgs.length-1){
+      document.getElementById('loaderMsg').textContent = msgs[++mi];
+    } else {
       clearInterval(msgInt);
-      // Store team
-      existing[teamData.teamId] = { ...teamData, active:true };
-      localStorage.setItem('cure_teams', JSON.stringify(existing));
-      localStorage.setItem('cure_current_team', JSON.stringify(teamData));
-      setTimeout(()=>{ window.location.href='game.html'; }, 800);
+      try {
+        // Write team to Firestore
+        await setDoc(doc(db, 'teams', teamId), teamData);
+        // Store in sessionStorage for this browser tab
+        sessionStorage.setItem('cure_current_team', JSON.stringify(teamData));
+        setTimeout(()=>{ window.location.href='game.html'; }, 600);
+      } catch(err){
+        console.error('Firestore write error:', err);
+        overlay.classList.remove('active');
+        showToast('⚠ FAILED TO REGISTER — CHECK FIREBASE CONFIG');
+        submitBtn.disabled = false;
+      }
     }
   }, 600);
-}
+};
+
+window.addEventListener('resize',()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
 </script>
 </body>
 </html>
