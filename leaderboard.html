@@ -30,14 +30,12 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 .live-dot{display:inline-block;width:8px;height:8px;background:var(--neon-green);border-radius:50%;animation:blink 1s infinite;margin-right:6px;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 
-/* Stats summary */
 .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:30px;}
 .stat-card{background:var(--bg-card);border:1px solid var(--panel-border);border-radius:3px;padding:20px;text-align:center;position:relative;overflow:hidden;}
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--neon-blue),transparent);}
 .stat-card-val{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;display:block;margin-bottom:4px;}
 .stat-card-lbl{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--text-dim);}
 
-/* Table */
 .table-wrap{background:var(--bg-card);border:1px solid var(--panel-border);border-radius:3px;overflow:hidden;position:relative;}
 .table-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--neon-blue),transparent);}
 .table-head{padding:14px 20px;border-bottom:1px solid var(--panel-border);display:flex;justify-content:space-between;align-items:center;}
@@ -58,35 +56,23 @@ tbody tr.top-2{background:rgba(192,192,192,0.03);}
 tbody tr.top-3{background:rgba(205,127,50,0.03);}
 td{font-family:'Rajdhani',sans-serif;font-size:14px;padding:14px 16px;color:rgba(0,212,255,0.8);}
 
-.rank-badge{
-  font-family:'Orbitron',sans-serif;font-size:12px;font-weight:900;
-  width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
-  border:1px solid rgba(0,212,255,0.2);color:var(--text-dim);
-}
+.rank-badge{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:900;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(0,212,255,0.2);color:var(--text-dim);}
 .rank-badge.r1{border-color:#ffd700;color:#ffd700;box-shadow:0 0 10px rgba(255,215,0,0.3);background:rgba(255,215,0,0.05);}
 .rank-badge.r2{border-color:#c0c0c0;color:#c0c0c0;box-shadow:0 0 8px rgba(192,192,192,0.2);}
 .rank-badge.r3{border-color:#cd7f32;color:#cd7f32;box-shadow:0 0 8px rgba(205,127,50,0.2);}
 
 .team-name-cell{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;color:#fff;}
 .school-name{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:2px;}
-
 .score-cell{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;color:var(--neon-green);text-shadow:0 0 8px rgba(0,255,136,0.3);}
-
 .time-cell{font-family:'Share Tech Mono',monospace;font-size:12px;}
 .time-cell.good{color:var(--neon-green);}
 .time-cell.ok{color:var(--neon-orange);}
 .time-cell.bad{color:var(--neon-red);}
-
 .hints-cell{font-family:'Share Tech Mono',monospace;font-size:12px;}
-
-.status-badge{
-  font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;
-  padding:3px 8px;border-radius:2px;
-}
+.status-badge{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;padding:3px 8px;border-radius:2px;}
 .status-badge.complete{color:var(--neon-green);background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);}
 .status-badge.active{color:var(--neon-blue);background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);animation:blink 2s infinite;}
 .status-badge.failed{color:var(--neon-red);background:rgba(255,34,68,0.05);border:1px solid rgba(255,34,68,0.15);}
-
 .empty-state{padding:60px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--text-dim);letter-spacing:2px;}
 
 .corner{position:absolute;width:12px;height:12px;border-color:var(--neon-blue);border-style:solid;}
@@ -136,20 +122,38 @@ td{font-family:'Rajdhani',sans-serif;font-size:14px;padding:14px 16px;color:rgba
   <div class="table-wrap">
     <div class="table-head">
       <div class="table-head-title">▸ SENTINEL RANKINGS</div>
-      <button class="refresh-btn" onclick="loadLeaderboard()">↻ REFRESH</button>
+      <button class="refresh-btn" onclick="manualRefresh()">↻ REFRESH</button>
     </div>
     <div id="tableContainer">
-      <div class="empty-state">AWAITING MISSION COMPLETIONS...<br><br>BE THE FIRST TO SECURE THE ANTIDOTE</div>
+      <div class="empty-state">CONNECTING TO FIRESTORE...<br><br>LOADING LIVE DATA</div>
     </div>
   </div>
 </div>
 
-<script>
-const canvas = document.getElementById('matrix-canvas');
-const ctx = canvas.getContext('2d');
+<script type="module">
+// ── Firebase ──────────────────────────────────────────────────
+import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, onSnapshot, query, orderBy, getDocs }
+                            from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// 🔥 PASTE YOUR CONFIG HERE
+const firebaseConfig = {
+  apiKey: "AIzaSyALDA8Ml23lZnUaiDTZF2AaZC2gnjx4-8I",
+  authDomain: "cyber-rescue-ops.firebaseapp.com",
+  projectId: "cyber-rescue-ops",
+  storageBucket: "cyber-rescue-ops.firebasestorage.app",
+  messagingSenderId: "12878094017",
+  appId: "1:12878094017:web:e1caf6bd006beeb49a7e40"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ── Matrix ────────────────────────────────────────────────────
+const canvas=document.getElementById('matrix-canvas');
+const ctx=canvas.getContext('2d');
 canvas.width=window.innerWidth; canvas.height=window.innerHeight;
 const cols=Math.floor(canvas.width/16); const drops=Array(cols).fill(1);
-const chars='01アイウ@#$%ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const chars='01アイウ@#$ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 function drawMatrix(){
   ctx.fillStyle='rgba(2,8,17,0.05)';ctx.fillRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle='rgba(0,212,255,0.6)';ctx.font='13px Share Tech Mono';
@@ -158,23 +162,16 @@ function drawMatrix(){
 setInterval(drawMatrix,60);
 
 function fmtTime(secs){
-  const m=Math.floor(secs/60);const s=secs%60;
+  const m=Math.floor(secs/60); const s=secs%60;
   return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
 }
-function timeClass(secs){
-  if(secs>900) return 'good';
-  if(secs>300) return 'ok';
-  return 'bad';
-}
+function timeClass(secs){ if(secs>900)return 'good'; if(secs>300)return 'ok'; return 'bad'; }
 
-function loadLeaderboard(){
-  const lb = JSON.parse(localStorage.getItem('cure_leaderboard')||'[]');
-  const teams = JSON.parse(localStorage.getItem('cure_teams')||'{}');
-  const allTeams = Object.values(teams);
-
-  document.getElementById('statTeams').textContent = allTeams.length;
+// ── Render leaderboard ────────────────────────────────────────
+function renderLeaderboard(lb, allTeams){
+  document.getElementById('statTeams').textContent   = allTeams.length;
   document.getElementById('statComplete').textContent = lb.length;
-  document.getElementById('statTop').textContent = lb.length>0 ? lb[0].score : '—';
+  document.getElementById('statTop').textContent     = lb.length>0 ? lb[0].score : '—';
 
   const container = document.getElementById('tableContainer');
 
@@ -183,49 +180,40 @@ function loadLeaderboard(){
     return;
   }
 
-  const table = document.createElement('table');
+  const table=document.createElement('table');
   table.innerHTML=`<thead><tr>
-    <th>RANK</th>
-    <th>TEAM</th>
-    <th>SCORE</th>
-    <th>TIME LEFT</th>
-    <th>HINTS</th>
-    <th>STATUS</th>
+    <th>RANK</th><th>TEAM</th><th>SCORE</th><th>TIME LEFT</th><th>HINTS</th><th>STATUS</th>
   </tr></thead>`;
-  const tbody = document.createElement('tbody');
+  const tbody=document.createElement('tbody');
 
   lb.forEach((entry,i)=>{
-    const tr = document.createElement('tr');
-    if(i===0)tr.className='top-1';
-    else if(i===1)tr.className='top-2';
-    else if(i===2)tr.className='top-3';
+    const tr=document.createElement('tr');
+    if(i===0)tr.className='top-1'; else if(i===1)tr.className='top-2'; else if(i===2)tr.className='top-3';
     const rankCls=i<3?'r'+(i+1):'';
     tr.innerHTML=`
       <td><span class="rank-badge ${rankCls}">${i+1}</span></td>
       <td><div class="team-name-cell">${entry.teamName}</div><div class="school-name">${entry.school||''}</div></td>
       <td class="score-cell">${entry.score}</td>
-      <td class="time-cell ${timeClass(entry.timeLeft)}">${fmtTime(entry.timeLeft)}</td>
-      <td class="hints-cell" style="color:${entry.hintsUsed===0?'var(--neon-green)':'var(--text-dim)'}">${entry.hintsUsed}</td>
+      <td class="time-cell ${timeClass(entry.timeLeft||0)}">${fmtTime(entry.timeLeft||0)}</td>
+      <td class="hints-cell" style="color:${(entry.hintsUsed||0)===0?'var(--neon-green)':'var(--text-dim)'}">${entry.hintsUsed||0}</td>
       <td><span class="status-badge complete">COMPLETE</span></td>
     `;
     tbody.appendChild(tr);
   });
 
-  // Add active teams not in leaderboard
-  allTeams.forEach(t=>{
-    const inLb = lb.find(e=>e.teamId===t.teamId);
-    if(!inLb && t.active){
-      const tr=document.createElement('tr');
-      tr.innerHTML=`
-        <td><span class="rank-badge">—</span></td>
-        <td><div class="team-name-cell">${t.teamName}</div><div class="school-name">${t.school||''}</div></td>
-        <td class="score-cell" style="color:var(--text-dim)">${t.score||1000}</td>
-        <td class="time-cell">—</td>
-        <td class="hints-cell">—</td>
-        <td><span class="status-badge active">IN PROGRESS</span></td>
-      `;
-      tbody.appendChild(tr);
-    }
+  // Active teams not yet finished
+  const completedIds = new Set(lb.map(e=>e.teamId));
+  allTeams.filter(t=>t.active && !completedIds.has(t.teamId)).forEach(t=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><span class="rank-badge">—</span></td>
+      <td><div class="team-name-cell">${t.teamName}</div><div class="school-name">${t.school||''}</div></td>
+      <td class="score-cell" style="color:var(--text-dim)">${t.score||1000}</td>
+      <td class="time-cell">—</td>
+      <td class="hints-cell">—</td>
+      <td><span class="status-badge active">IN PROGRESS</span></td>
+    `;
+    tbody.appendChild(tr);
   });
 
   table.appendChild(tbody);
@@ -233,9 +221,34 @@ function loadLeaderboard(){
   container.appendChild(table);
 }
 
-loadLeaderboard();
-setInterval(loadLeaderboard, 10000);
-window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;});
+// ── Real-time listeners ───────────────────────────────────────
+let lbData    = [];
+let teamsData = [];
+
+// Leaderboard listener — sorted by score descending
+onSnapshot(
+  query(collection(db,'leaderboard'), orderBy('score','desc')),
+  snap=>{
+    lbData = snap.docs.map(d=>d.data());
+    renderLeaderboard(lbData, teamsData);
+  },
+  err=>{ console.error('Leaderboard listener error:',err); }
+);
+
+// Teams listener
+onSnapshot(
+  collection(db,'teams'),
+  snap=>{
+    teamsData = snap.docs.map(d=>d.data());
+    renderLeaderboard(lbData, teamsData);
+  },
+  err=>{ console.error('Teams listener error:',err); }
+);
+
+// Manual refresh button (listeners already auto-update, but keeps UX feel)
+window.manualRefresh = function(){ renderLeaderboard(lbData, teamsData); };
+
+window.addEventListener('resize',()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
 </script>
 </body>
 </html>
