@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CURE-LOCK | Cyber Sentinel Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --neon-blue: #00d4ff;
+    --neon-green: #00ff88;
+    --neon-red: #ff2244;
+    --bg-dark: #020811;
+    --bg-card: rgba(0,20,40,0.7);
+    --panel-border: rgba(0,212,255,0.2);
+    --text-dim: rgba(0,212,255,0.5);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg-dark);
+    color: var(--neon-blue);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* Matrix rain canvas */
+  #matrix-canvas {
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    opacity: 0.07; z-index: 0; pointer-events: none;
+  }
+
+  /* Scanline overlay */
+  .scanlines {
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px);
+    z-index: 1; pointer-events: none;
+  }
+
+  .content { position: relative; z-index: 2; }
+
+  /* Header */
+  header {
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--panel-border);
+    backdrop-filter: blur(10px);
+  }
+  .logo {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 6px;
+    text-shadow: 0 0 20px var(--neon-blue), 0 0 40px var(--neon-blue);
+    animation: logoPulse 3s infinite;
+  }
+  @keyframes logoPulse {
+    0%,100% { text-shadow: 0 0 20px var(--neon-blue), 0 0 40px var(--neon-blue); }
+    50% { text-shadow: 0 0 30px var(--neon-blue), 0 0 60px var(--neon-blue), 0 0 80px var(--neon-blue); }
+  }
+  .logo span { color: var(--neon-red); }
+  .header-right {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    text-align: right;
+    color: var(--text-dim);
+  }
+  .status-dot {
+    display: inline-block; width:8px; height:8px;
+    background: var(--neon-green); border-radius:50%;
+    animation: blink 1s infinite; margin-right:6px;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* Hero */
+  .hero {
+    min-height: calc(100vh - 80px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    position: relative;
+  }
+
+  /* Radar */
+  .radar-wrap {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    width: 600px; height: 600px;
+    opacity: 0.06;
+    pointer-events: none;
+  }
+  .radar-ring {
+    position: absolute; top:50%; left:50%;
+    transform: translate(-50%,-50%);
+    border: 1px solid var(--neon-blue);
+    border-radius: 50%;
+  }
+  .radar-sweep {
+    position: absolute; top:50%; left:50%;
+    width: 300px; height: 2px;
+    background: linear-gradient(90deg, rgba(0,212,255,0.8), transparent);
+    transform-origin: left center;
+    animation: sweep 4s linear infinite;
+  }
+  @keyframes sweep { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+  /* Transmission block */
+  .transmission-box {
+    background: var(--bg-card);
+    border: 1px solid var(--panel-border);
+    border-radius: 4px;
+    padding: 40px 60px;
+    max-width: 800px;
+    width: 100%;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 0 40px rgba(0,212,255,0.05), inset 0 0 40px rgba(0,0,0,0.3);
+    position: relative;
+    margin: 20px 0;
+  }
+  .transmission-box::before {
+    content: '';
+    position: absolute; top:0; left:0; right:0; height:2px;
+    background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
+    animation: scanTop 3s infinite;
+  }
+  @keyframes scanTop {
+    0%,100%{opacity:0.3} 50%{opacity:1}
+  }
+
+  .decrypting-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--neon-green);
+    margin-bottom: 16px;
+    animation: blink 1.5s infinite;
+  }
+
+  .waveform {
+    width: 100%;
+    height: 60px;
+    margin: 20px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  #waveCanvas { width:100%; height:100%; }
+
+  .main-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(36px, 8vw, 72px);
+    font-weight: 900;
+    letter-spacing: 8px;
+    line-height: 1.1;
+    margin: 10px 0;
+    background: linear-gradient(180deg, #ffffff 0%, var(--neon-blue) 60%, rgba(0,212,255,0.3) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 20px rgba(0,212,255,0.5));
+  }
+
+  .subtitle {
+    font-size: 14px;
+    letter-spacing: 6px;
+    color: var(--text-dim);
+    margin: 10px 0 30px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  /* Typewriter rules */
+  .rules-container {
+    display: none;
+    text-align: left;
+    margin: 20px 0;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+  }
+  .rules-container.active { display: block; }
+  .rule-line {
+    color: var(--neon-green);
+    margin: 6px 0;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: all 0.3s;
+  }
+  .rule-line.show { opacity:1; transform:translateX(0); }
+  .rule-prefix { color: var(--neon-blue); }
+
+  /* Buttons */
+  .btn-group {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 30px;
+  }
+
+  .btn {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    padding: 14px 36px;
+    border: 1px solid currentColor;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+  }
+  .btn::before {
+    content: '';
+    position: absolute; top:0; left:-100%; width:100%; height:100%;
+    background: currentColor;
+    opacity: 0.1;
+    transition: left 0.3s;
+  }
+  .btn:hover::before { left:0; }
+  .btn:hover { transform: scale(1.03); box-shadow: 0 0 20px currentColor; }
+
+  .btn-primary {
+    color: var(--neon-blue);
+    box-shadow: 0 0 10px rgba(0,212,255,0.2);
+  }
+  .btn-green {
+    color: var(--neon-green);
+    box-shadow: 0 0 10px rgba(0,255,136,0.2);
+  }
+  .btn-red {
+    color: var(--neon-red);
+    animation: urgentPulse 2s infinite;
+  }
+  @keyframes urgentPulse {
+    0%,100%{box-shadow:0 0 10px rgba(255,34,68,0.3)}
+    50%{box-shadow:0 0 25px rgba(255,34,68,0.7)}
+  }
+
+  /* Initiate button */
+  #initiateBtn {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    padding: 18px 50px;
+    border: 2px solid var(--neon-blue);
+    background: transparent;
+    color: var(--neon-blue);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+    margin: 20px 0;
+    text-transform: uppercase;
+  }
+  #initiateBtn::after {
+    content:'';
+    position:absolute; top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    width:0; height:0;
+    background: rgba(0,212,255,0.1);
+    border-radius:50%;
+    transition: width 0.6s, height 0.6s;
+  }
+  #initiateBtn:hover::after { width:300px; height:300px; }
+  #initiateBtn:hover { box-shadow: 0 0 30px var(--neon-blue); color: #fff; }
+
+  /* Corner decorations */
+  .corner {
+    position: absolute;
+    width: 20px; height: 20px;
+    border-color: var(--neon-blue);
+    border-style: solid;
+  }
+  .corner-tl { top:10px; left:10px; border-width:2px 0 0 2px; }
+  .corner-tr { top:10px; right:10px; border-width:2px 2px 0 0; }
+  .corner-bl { bottom:10px; left:10px; border-width:0 0 2px 2px; }
+  .corner-br { bottom:10px; right:10px; border-width:0 2px 2px 0; }
+
+  /* Threat alert bar */
+  .alert-bar {
+    position: fixed; top:0; left:0; right:0;
+    background: var(--neon-red);
+    color: #000;
+    text-align: center;
+    padding: 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    font-weight: 700;
+    z-index: 100;
+    transform: translateY(-100%);
+    animation: alertDrop 0.5s 2s forwards;
+  }
+  @keyframes alertDrop {
+    to { transform: translateY(0); }
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 40px;
+    justify-content: center;
+    margin: 20px 0;
+    flex-wrap: wrap;
+  }
+  .stat-item {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    text-align: center;
+  }
+  .stat-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 20px;
+    display: block;
+    color: var(--neon-green);
+    text-shadow: 0 0 10px var(--neon-green);
+  }
+  .stat-label { color: var(--text-dim); letter-spacing: 2px; }
+
+  /* Audio indicator */
+  .audio-indicator {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    margin: 15px 0;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--neon-green);
+  }
+  .audio-indicator.active { display: flex; }
+  .audio-bar {
+    width: 3px;
+    background: var(--neon-green);
+    border-radius: 2px;
+    animation: audioAnim 0.5s infinite alternate;
+  }
+  @keyframes audioAnim {
+    from { height: 6px; } to { height: 20px; }
+  }
+
+  /* Glitch effect */
+  .glitch {
+    animation: glitchEffect 0.1s infinite;
+  }
+  @keyframes glitchEffect {
+    0%,100%{clip-path:none; transform:none}
+    33%{clip-path:polygon(0 30%, 100% 30%, 100% 50%, 0 50%); transform:translateX(-3px)}
+    66%{clip-path:polygon(0 60%, 100% 60%, 100% 80%, 0 80%); transform:translateX(3px)}
+  }
+
+  /* Loading bar */
+  .loading-bar-wrap {
+    width: 100%;
+    height: 2px;
+    background: rgba(0,212,255,0.1);
+    margin: 10px 0;
+    overflow: hidden;
+  }
+  .loading-bar-fill {
+    height: 100%;
+    background: var(--neon-blue);
+    width: 0%;
+    transition: width 0.3s;
+    box-shadow: 0 0 10px var(--neon-blue);
+  }
+
+  /* Side panels */
+  .side-info {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: rgba(0,212,255,0.25);
+    z-index: 3;
+    line-height: 2;
+  }
+  .side-info-left { left: 15px; }
+  .side-info-right { right: 15px; text-align: right; }
+
+  @media(max-width: 600px) {
+    .transmission-box { padding: 24px 20px; }
+    .side-info { display: none; }
+    header { padding: 15px 20px; }
+    .logo { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="alert-bar">⚠ CRITICAL BREACH DETECTED — MED-X RESEARCH LAB — SENTINEL RESPONSE REQUIRED ⚠</div>
+
+<canvas id="matrix-canvas"></canvas>
+<div class="scanlines"></div>
+
+<div class="side-info side-info-left">
+  UPLINK: SECURE<br>
+  NODE: 7-ALPHA<br>
+  LAT: 40.7128° N<br>
+  LON: 74.0060° W<br>
+  ENCRYPT: AES-256<br>
+  VPN: ACTIVE<br>
+  TOR: ROUTING
+</div>
+<div class="side-info side-info-right">
+  SENTINEL_OPS<br>
+  CLEARANCE: L5<br>
+  PROTOCOL: RED<br>
+  MISSION: ACTIVE<br>
+  UNITS: DEPLOYED<br>
+  FIREWALL: UP<br>
+  STATUS: LIVE
+</div>
+
+<div class="content">
+  <header>
+    <div class="logo">CURE<span>-</span>LOCK</div>
+    <div class="header-right">
+      <div><span class="status-dot"></span>SENTINEL OPS CENTER</div>
+      <div>PROTOCOL: OMEGA-RED | CLEARANCE LVL 5</div>
+      <div id="sysTime">SYS: --:--:--</div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="radar-wrap" id="radarWrap"></div>
+
+    <div class="transmission-box" id="mainPanel">
+      <div class="corner corner-tl"></div>
+      <div class="corner corner-tr"></div>
+      <div class="corner corner-bl"></div>
+      <div class="corner corner-br"></div>
+
+      <div class="decrypting-label" id="decryptLabel">▶ DECRYPTING INCOMING TRANSMISSION...</div>
+
+      <div class="loading-bar-wrap">
+        <div class="loading-bar-fill" id="loadBar"></div>
+      </div>
+
+      <canvas class="waveform" id="waveCanvas" height="60"></canvas>
+
+      <div class="main-title">CURE-LOCK</div>
+      <div class="subtitle">CYBER SENTINEL OPERATIONS — MISSION OMEGA</div>
+
+      <div class="stats-bar">
+        <div class="stat-item">
+          <span class="stat-value" id="countTeams">0</span>
+          <span class="stat-label">TEAMS ACTIVE</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">30:00</span>
+          <span class="stat-label">MISSION TIME</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">8</span>
+          <span class="stat-label">OBJECTIVES</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="threatPct">87%</span>
+          <span class="stat-label">THREAT LEVEL</span>
+        </div>
+      </div>
+
+      <div style="text-align:center">
+        <button id="initiateBtn">[ INITIATE TRANSMISSION ]</button>
+      </div>
+
+      <div class="audio-indicator" id="audioInd">
+        <div class="audio-bar" style="animation-delay:0s"></div>
+        <div class="audio-bar" style="animation-delay:0.1s"></div>
+        <div class="audio-bar" style="animation-delay:0.2s"></div>
+        <div class="audio-bar" style="animation-delay:0.3s"></div>
+        <div class="audio-bar" style="animation-delay:0.1s"></div>
+        <div class="audio-bar" style="animation-delay:0.05s"></div>
+        <span>INCOMING TRANSMISSION FROM: DIRECTOR VANCE</span>
+      </div>
+
+      <div class="rules-container" id="rulesContainer">
+        <div style="color:var(--neon-red); font-size:11px; letter-spacing:3px; margin-bottom:12px">MISSION PROTOCOLS:</div>
+      </div>
+
+      <div class="btn-group" id="btnGroup" style="display:none">
+        <a href="login.html" class="btn btn-red">▶ START MISSION</a>
+        <button class="btn btn-primary" onclick="toggleRules()">◈ MISSION RULES</button>
+        <a href="leaderboard.html" class="btn btn-green">◉ LEADERBOARD</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// System clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('sysTime').textContent =
+    'SYS: ' + now.toTimeString().split(' ')[0];
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Matrix rain
+const canvas = document.getElementById('matrix-canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+const cols = Math.floor(canvas.width / 16);
+const drops = Array(cols).fill(1);
+const chars = '01アイウエオカキクケコサシスセソタチツテトナ@#$%^&*()ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+function drawMatrix() {
+  ctx.fillStyle = 'rgba(2,8,17,0.05)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#00ff88';
+  ctx.font = '14px Share Tech Mono';
+  drops.forEach((y,i) => {
+    const char = chars[Math.floor(Math.random()*chars.length)];
+    ctx.fillText(char, i*16, y*16);
+    if(y*16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  });
+}
+setInterval(drawMatrix, 50);
+
+// Radar rings
+const rWrap = document.getElementById('radarWrap');
+[280,220,160,100,50].forEach(r => {
+  const ring = document.createElement('div');
+  ring.className = 'radar-ring';
+  ring.style.width = r*2+'px';
+  ring.style.height = r*2+'px';
+  rWrap.appendChild(ring);
+});
+const sweep = document.createElement('div');
+sweep.className = 'radar-sweep';
+rWrap.appendChild(sweep);
+
+// Waveform
+const wc = document.getElementById('waveCanvas');
+const wctx = wc.getContext('2d');
+wc.width = wc.offsetWidth * 2;
+wc.height = 120;
+let wPhase = 0;
+let waveActive = false;
+function drawWave() {
+  wctx.clearRect(0,0,wc.width,wc.height);
+  wctx.strokeStyle = waveActive ? '#00ff88' : '#00d4ff';
+  wctx.lineWidth = 2;
+  wctx.shadowBlur = 8;
+  wctx.shadowColor = waveActive ? '#00ff88' : '#00d4ff';
+  wctx.beginPath();
+  for(let x=0;x<wc.width;x++) {
+    const amp = waveActive ? 25 + Math.random()*10 : 15;
+    const freq = waveActive ? 0.03 : 0.02;
+    const y = 60 + Math.sin(x*freq + wPhase)*amp + Math.sin(x*0.05+wPhase*1.3)*(amp*0.3);
+    x===0 ? wctx.moveTo(x,y) : wctx.lineTo(x,y);
+  }
+  wctx.stroke();
+  wPhase += waveActive ? 0.15 : 0.05;
+  requestAnimationFrame(drawWave);
+}
+drawWave();
+
+// Loading bar animation
+let loadPct = 0;
+const loadInterval = setInterval(() => {
+  loadPct = Math.min(100, loadPct + Math.random()*3);
+  document.getElementById('loadBar').style.width = loadPct + '%';
+  if(loadPct >= 100) {
+    clearInterval(loadInterval);
+    document.getElementById('decryptLabel').textContent = '✓ TRANSMISSION DECRYPTED — AUTHENTICATION VERIFIED';
+  }
+}, 80);
+
+// Threat level animation
+let threat = 87;
+setInterval(() => {
+  threat = Math.max(70, Math.min(99, threat + (Math.random()*4-2)));
+  document.getElementById('threatPct').textContent = Math.round(threat) + '%';
+}, 3000);
+
+// Team count animation
+let tc = 0;
+const tcTarget = Math.floor(Math.random()*20)+5;
+const tcInt = setInterval(() => {
+  if(tc < tcTarget) { tc++; document.getElementById('countTeams').textContent = tc; }
+  else clearInterval(tcInt);
+}, 100);
+
+// Mission briefing audio + typewriter
+const missionRules = [
+  'No page reloads — progress will be lost',
+  'Work as a team — coordinate all decisions',
+  'Every wrong answer increases Threat Level',
+  'Intel requests cost 1 minute or 50 points',
+  'Combine all intel clues for final lock code',
+  'Finish before The Void completes upload'
+];
+
+let briefingPlaying = false;
+document.getElementById('initiateBtn').addEventListener('click', () => {
+  if(briefingPlaying) return;
+  briefingPlaying = true;
+  document.getElementById('initiateBtn').textContent = '[ TRANSMISSION ACTIVE ]';
+  document.getElementById('initiateBtn').style.color = '#00ff88';
+  document.getElementById('initiateBtn').style.borderColor = '#00ff88';
+  document.getElementById('audioInd').classList.add('active');
+  waveActive = true;
+
+  // Typewriter for rules
+  setTimeout(() => {
+    document.getElementById('rulesContainer').classList.add('active');
+    missionRules.forEach((rule, i) => {
+      const div = document.createElement('div');
+      div.className = 'rule-line';
+      div.innerHTML = `<span class="rule-prefix">[${String(i+1).padStart(2,'0')}] </span>${rule}`;
+      document.getElementById('rulesContainer').appendChild(div);
+      setTimeout(() => div.classList.add('show'), i * 600 + 500);
+    });
+    setTimeout(() => {
+      document.getElementById('btnGroup').style.display = 'flex';
+      document.getElementById('audioInd').classList.remove('active');
+      waveActive = false;
+    }, missionRules.length * 600 + 1000);
+  }, 1500);
+});
+
+function toggleRules() {
+  const rc = document.getElementById('rulesContainer');
+  rc.classList.toggle('active');
+}
+
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  wc.width = wc.offsetWidth * 2;
+});
+</script>
+</body>
+</html>

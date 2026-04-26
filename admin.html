@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CURE-LOCK | Admin Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --neon-blue:#00d4ff; --neon-green:#00ff88; --neon-red:#ff2244;
+  --neon-yellow:#ffdd00; --neon-orange:#ff8c00;
+  --bg-dark:#020811; --bg-card:rgba(0,20,40,0.8);
+  --panel-border:rgba(0,212,255,0.18); --text-dim:rgba(0,212,255,0.45);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg-dark);color:var(--neon-blue);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden;}
+#matrix-canvas{position:fixed;top:0;left:0;width:100%;height:100%;opacity:0.04;z-index:0;pointer-events:none;}
+.scanlines{position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.12) 2px,rgba(0,0,0,0.12) 4px);z-index:1;pointer-events:none;}
+.content{position:relative;z-index:2;max-width:1100px;margin:0 auto;padding:20px;}
+
+/* AUTH OVERLAY */
+.auth-overlay{position:fixed;inset:0;z-index:50;background:var(--bg-dark);display:flex;align-items:center;justify-content:center;}
+.auth-box{background:var(--bg-card);border:1px solid var(--panel-border);border-radius:4px;padding:40px;width:380px;text-align:center;position:relative;}
+.auth-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--neon-red),transparent);}
+.auth-title{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;letter-spacing:4px;color:var(--neon-red);margin-bottom:6px;}
+.auth-sub{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-bottom:24px;}
+.auth-input{
+  width:100%;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);border-radius:2px;
+  color:var(--neon-blue);font-family:'Share Tech Mono',monospace;font-size:16px;letter-spacing:6px;
+  padding:14px;outline:none;text-align:center;transition:all 0.3s;
+}
+.auth-input:focus{border-color:var(--neon-blue);box-shadow:0 0 15px rgba(0,212,255,0.1);}
+.auth-btn{
+  width:100%;margin-top:14px;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:4px;padding:14px;border:2px solid var(--neon-red);background:transparent;
+  color:var(--neon-red);cursor:pointer;transition:all 0.3s;
+}
+.auth-btn:hover{background:rgba(255,34,68,0.1);box-shadow:0 0 20px rgba(255,34,68,0.3);}
+.auth-error{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--neon-red);margin-top:10px;display:none;letter-spacing:2px;}
+
+/* HEADER */
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 0;margin-bottom:24px;border-bottom:1px solid var(--panel-border);}
+.logo{font-family:'Orbitron',sans-serif;font-size:18px;font-weight:900;letter-spacing:5px;text-shadow:0 0 15px var(--neon-blue);}
+.logo span{color:var(--neon-red);}
+.admin-badge{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;padding:6px 14px;border:1px solid rgba(255,34,68,0.4);color:var(--neon-red);border-radius:2px;}
+
+/* GRID */
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.panel{background:var(--bg-card);border:1px solid var(--panel-border);border-radius:3px;overflow:hidden;position:relative;}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--neon-blue),transparent);}
+.panel-head{padding:12px 16px;border-bottom:1px solid var(--panel-border);font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;display:flex;align-items:center;gap:6px;}
+.ph-dot{width:6px;height:6px;border-radius:50%;background:var(--neon-green);animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.ph-dot.red{background:var(--neon-red);}
+.panel-body{padding:16px;}
+
+/* CONTROL BUTTONS */
+.ctrl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.ctrl-btn{
+  font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;
+  padding:12px;border:1px solid currentColor;background:transparent;cursor:pointer;
+  transition:all 0.3s;text-align:center;border-radius:2px;
+}
+.ctrl-btn:hover{background:rgba(0,212,255,0.05);box-shadow:0 0 12px currentColor;}
+.ctrl-btn.blue{color:var(--neon-blue);}
+.ctrl-btn.green{color:var(--neon-green);}
+.ctrl-btn.red{color:var(--neon-red);}
+.ctrl-btn.yellow{color:var(--neon-yellow);}
+.ctrl-btn.orange{color:var(--neon-orange);}
+.ctrl-btn.full{grid-column:1/-1;}
+
+/* STATS */
+.mini-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.mini-stat{background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.1);border-radius:2px;padding:12px;text-align:center;}
+.mini-stat-val{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;display:block;}
+.mini-stat-lbl{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim);}
+
+/* TEAM TABLE */
+.team-table{width:100%;border-collapse:collapse;}
+thead tr{border-bottom:1px solid var(--panel-border);}
+th{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim);padding:8px 10px;text-align:left;font-weight:normal;}
+tbody tr{border-bottom:1px solid rgba(0,212,255,0.05);transition:background 0.2s;}
+tbody tr:hover{background:rgba(0,212,255,0.03);}
+td{font-family:'Rajdhani',sans-serif;font-size:13px;padding:10px 10px;color:rgba(0,212,255,0.8);}
+.td-mono{font-family:'Share Tech Mono',monospace;font-size:11px;}
+.td-name{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;color:#fff;}
+.badge{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;padding:2px 6px;border-radius:2px;}
+.badge.active{color:var(--neon-green);border:1px solid rgba(0,255,136,0.2);background:rgba(0,255,136,0.05);}
+.badge.complete{color:var(--neon-blue);border:1px solid rgba(0,212,255,0.2);}
+
+/* LOG */
+.log-wrap{max-height:200px;overflow-y:auto;}
+.log-wrap::-webkit-scrollbar{width:3px;}
+.log-wrap::-webkit-scrollbar-thumb{background:rgba(0,212,255,0.15);}
+.log-line{font-family:'Share Tech Mono',monospace;font-size:10px;padding:4px 0;border-bottom:1px solid rgba(0,212,255,0.05);color:var(--text-dim);}
+.log-line .ts{color:rgba(0,212,255,0.3);margin-right:6px;}
+.log-line.info{color:var(--neon-blue);}
+.log-line.success{color:var(--neon-green);}
+.log-line.warn{color:var(--neon-orange);}
+.log-line.danger{color:var(--neon-red);}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;z-index:100;padding:14px 24px;border-radius:2px;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;transform:translateY(80px);opacity:0;transition:all 0.3s;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{background:rgba(0,255,136,0.1);border:1px solid var(--neon-green);color:var(--neon-green);}
+.toast.error{background:rgba(255,34,68,0.1);border:1px solid var(--neon-red);color:var(--neon-red);}
+.toast.info{background:rgba(0,212,255,0.1);border:1px solid var(--neon-blue);color:var(--neon-blue);}
+
+.full-panel{grid-column:1/-1;}
+@media(max-width:700px){.admin-grid{grid-template-columns:1fr;}.ctrl-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<canvas id="matrix-canvas"></canvas>
+<div class="scanlines"></div>
+
+<!-- AUTH OVERLAY -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <div class="auth-title">⚠ RESTRICTED ACCESS</div>
+    <div class="auth-sub">ADMIN COMMAND CENTER — DIRECTOR LEVEL CLEARANCE REQUIRED</div>
+    <input type="password" class="auth-input" id="authInput" placeholder="••••••••" maxlength="20"
+      onkeydown="if(event.key==='Enter')checkAuth()">
+    <button class="auth-btn" onclick="checkAuth()">▶ AUTHENTICATE</button>
+    <div class="auth-error" id="authErr">⚠ ACCESS DENIED — INVALID CREDENTIALS</div>
+  </div>
+</div>
+
+<div class="content" id="adminContent" style="display:none">
+  <header>
+    <div class="logo">CURE<span>-</span>LOCK</div>
+    <div style="display:flex;gap:12px;align-items:center">
+      <div class="admin-badge">ADMIN CONSOLE</div>
+      <a href="index.html" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);text-decoration:none">← EXIT</a>
+    </div>
+  </header>
+
+  <!-- MINI STATS -->
+  <div class="mini-stats">
+    <div class="mini-stat">
+      <span class="mini-stat-val" style="color:var(--neon-blue)" id="s-teams">0</span>
+      <span class="mini-stat-lbl">TOTAL TEAMS</span>
+    </div>
+    <div class="mini-stat">
+      <span class="mini-stat-val" style="color:var(--neon-green)" id="s-complete">0</span>
+      <span class="mini-stat-lbl">COMPLETED</span>
+    </div>
+    <div class="mini-stat">
+      <span class="mini-stat-val" style="color:var(--neon-red)" id="s-active">0</span>
+      <span class="mini-stat-lbl">ACTIVE NOW</span>
+    </div>
+  </div>
+
+  <div class="admin-grid">
+    <!-- MISSION CONTROLS -->
+    <div class="panel">
+      <div class="panel-head"><div class="ph-dot red"></div>MISSION CONTROLS</div>
+      <div class="panel-body">
+        <div class="ctrl-grid">
+          <button class="ctrl-btn green" onclick="launchMission()">▶ LAUNCH MISSION</button>
+          <button class="ctrl-btn orange" onclick="pauseTimer()">⏸ PAUSE TIMER</button>
+          <button class="ctrl-btn blue" onclick="resumeTimer()">▶ RESUME TIMER</button>
+          <button class="ctrl-btn red" onclick="forceEndGame()">■ FORCE END</button>
+          <button class="ctrl-btn yellow full" onclick="resetAllTeams()">↺ RESET ALL TEAMS</button>
+        </div>
+        <button class="ctrl-btn blue full" style="margin-top:8px;width:100%" onclick="exportCSV()">↓ EXPORT RESULTS CSV</button>
+      </div>
+    </div>
+
+    <!-- SYSTEM STATUS -->
+    <div class="panel">
+      <div class="panel-head"><div class="ph-dot"></div>SYSTEM STATUS</div>
+      <div class="panel-body">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px;border:1px solid rgba(0,212,255,0.1);border-radius:2px">
+            <span>MISSION STATUS</span><span style="color:var(--neon-green)" id="sys-status">STANDBY</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px;border:1px solid rgba(0,212,255,0.1);border-radius:2px">
+            <span>FIREBASE</span><span style="color:var(--neon-yellow)">SIMULATED (LOCAL)</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px;border:1px solid rgba(0,212,255,0.1);border-radius:2px">
+            <span>LEADERBOARD</span><span style="color:var(--neon-green)">LIVE</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px;border:1px solid rgba(0,212,255,0.1);border-radius:2px">
+            <span>LAST REFRESH</span><span id="lastRefresh" style="color:var(--text-dim)">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEAM MONITOR -->
+    <div class="panel full-panel">
+      <div class="panel-head"><div class="ph-dot"></div>LIVE TEAM MONITOR</div>
+      <div class="panel-body">
+        <div id="teamTableWrap">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-dim);text-align:center;padding:30px">NO TEAMS REGISTERED YET</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN LOG -->
+    <div class="panel full-panel">
+      <div class="panel-head"><div class="ph-dot red"></div>ADMIN ACTION LOG</div>
+      <div class="panel-body">
+        <div class="log-wrap" id="adminLog"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ADMIN_PASS = 'VANCE2024';
+
+// Matrix
+const canvas = document.getElementById('matrix-canvas');
+const ctx = canvas.getContext('2d');
+canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+const cols=Math.floor(canvas.width/16);const drops=Array(cols).fill(1);
+const chars='01アイウ@#$%ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+function dm(){ctx.fillStyle='rgba(2,8,17,0.05)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='rgba(255,34,68,0.6)';ctx.font='13px Share Tech Mono';drops.forEach((y,i)=>{ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*16,y*16);if(y*16>canvas.height&&Math.random()>0.975)drops[i]=0;drops[i]++;});}
+setInterval(dm,60);
+
+function checkAuth(){
+  const val = document.getElementById('authInput').value;
+  if(val === ADMIN_PASS){
+    document.getElementById('authOverlay').style.display='none';
+    document.getElementById('adminContent').style.display='block';
+    loadAdminData();
+    addLog('Admin authenticated successfully','success');
+  } else {
+    document.getElementById('authErr').style.display='block';
+    document.getElementById('authInput').value='';
+    document.getElementById('authInput').style.borderColor='var(--neon-red)';
+    addLog('Failed authentication attempt','danger');
+    setTimeout(()=>{
+      document.getElementById('authInput').style.borderColor='rgba(0,212,255,0.2)';
+    },2000);
+  }
+}
+
+function showToast(msg,type='info'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast '+type;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+function addLog(msg,cls='info'){
+  const wrap=document.getElementById('adminLog');
+  const t=new Date().toTimeString().split(' ')[0];
+  const line=document.createElement('div');
+  line.className='log-line '+cls;
+  line.innerHTML=`<span class="ts">[${t}]</span>${msg}`;
+  wrap.insertBefore(line,wrap.firstChild);
+}
+
+function loadAdminData(){
+  const teams=JSON.parse(localStorage.getItem('cure_teams')||'{}');
+  const lb=JSON.parse(localStorage.getItem('cure_leaderboard')||'[]');
+  const allTeams=Object.values(teams);
+  const active=allTeams.filter(t=>t.active).length;
+  document.getElementById('s-teams').textContent=allTeams.length;
+  document.getElementById('s-complete').textContent=lb.length;
+  document.getElementById('s-active').textContent=active;
+  document.getElementById('lastRefresh').textContent=new Date().toTimeString().split(' ')[0];
+
+  const wrap=document.getElementById('teamTableWrap');
+  if(allTeams.length===0){
+    wrap.innerHTML='<div style="font-family:\'Share Tech Mono\',monospace;font-size:12px;color:var(--text-dim);text-align:center;padding:30px">NO TEAMS REGISTERED YET</div>';
+    return;
+  }
+  const table=document.createElement('table');
+  table.className='team-table';
+  table.innerHTML=`<thead><tr>
+    <th>TEAM ID</th><th>TEAM NAME</th><th>INSTITUTION</th><th>LEADER</th>
+    <th>PLAYERS</th><th>LEVEL</th><th>SCORE</th><th>STATUS</th>
+  </tr></thead>`;
+  const tbody=document.createElement('tbody');
+  allTeams.forEach(t=>{
+    const inLb=lb.find(e=>e.teamId===t.teamId);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="td-mono">${t.teamId}</td>
+      <td class="td-name">${t.teamName}</td>
+      <td style="font-size:12px">${t.school||'—'}</td>
+      <td style="font-size:12px">${t.leader||'—'}</td>
+      <td class="td-mono" style="text-align:center">${t.players||1}</td>
+      <td class="td-mono" style="text-align:center">${t.currentLevel||t.level||1}/8</td>
+      <td style="font-family:'Orbitron',sans-serif;font-size:12px;color:var(--neon-green)">${t.score||1000}</td>
+      <td><span class="badge ${inLb?'complete':'active'}">${inLb?'COMPLETE':'ACTIVE'}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  wrap.innerHTML='';
+  wrap.appendChild(table);
+}
+
+// MISSION CONTROLS
+function launchMission(){
+  localStorage.setItem('cure_mission_status','ACTIVE');
+  document.getElementById('sys-status').textContent='ACTIVE';
+  document.getElementById('sys-status').style.color='var(--neon-green)';
+  addLog('Mission launched for all teams','success');
+  showToast('✓ MISSION LAUNCHED','success');
+}
+
+function pauseTimer(){
+  localStorage.setItem('cure_timer_paused','true');
+  addLog('Global timer paused by admin','warn');
+  showToast('⏸ TIMER PAUSED','info');
+}
+
+function resumeTimer(){
+  localStorage.setItem('cure_timer_paused','false');
+  addLog('Global timer resumed by admin','info');
+  showToast('▶ TIMER RESUMED','info');
+}
+
+function resetAllTeams(){
+  if(!confirm('CONFIRM: Reset ALL team data? This cannot be undone.')) return;
+  localStorage.removeItem('cure_teams');
+  localStorage.removeItem('cure_leaderboard');
+  localStorage.removeItem('cure_current_team');
+  localStorage.removeItem('cure_mission_status');
+  addLog('ALL TEAM DATA RESET — Data cleared','danger');
+  showToast('↺ ALL DATA RESET','error');
+  loadAdminData();
+}
+
+function forceEndGame(){
+  if(!confirm('Force end game for all teams?')) return;
+  localStorage.setItem('cure_force_end','true');
+  addLog('Game force-ended by admin','danger');
+  showToast('■ GAME FORCE ENDED','error');
+}
+
+function exportCSV(){
+  const lb=JSON.parse(localStorage.getItem('cure_leaderboard')||'[]');
+  const teams=JSON.parse(localStorage.getItem('cure_teams')||'{}');
+  const allTeams=Object.values(teams);
+  let csv='RANK,TEAM_NAME,SCHOOL,LEADER,PLAYERS,SCORE,TIME_LEFT,HINTS_USED,STATUS\n';
+  lb.forEach((e,i)=>{
+    const t=allTeams.find(t=>t.teamId===e.teamId)||{};
+    const m=Math.floor((e.timeLeft||0)/60);const s=(e.timeLeft||0)%60;
+    csv+=`${i+1},${e.teamName},${e.school||''},${t.leader||''},${t.players||1},${e.score},${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${e.hintsUsed||0},COMPLETE\n`;
+  });
+  const incomplete=allTeams.filter(t=>!lb.find(e=>e.teamId===t.teamId));
+  incomplete.forEach(t=>{
+    csv+=`—,${t.teamName},${t.school||''},${t.leader||''},${t.players||1},${t.score||1000},—,—,IN_PROGRESS\n`;
+  });
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='curelock_results_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+  addLog('Results exported to CSV','success');
+  showToast('↓ CSV EXPORTED','success');
+}
+
+setInterval(loadAdminData, 15000);
+window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;});
+</script>
+</body>
+</html>
