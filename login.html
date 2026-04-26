@@ -305,6 +305,31 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
+  async function testFirestoreConnection() {
+  try {
+    const testRef = doc(db, "test", "connection");
+
+    await setDoc(testRef, {
+      status: "connected",
+      time: new Date().toISOString()
+    });
+
+    console.log("✅ Firestore WRITE SUCCESS");
+
+    const snap = await getDoc(testRef);
+
+    if (snap.exists()) {
+      console.log("✅ Firestore READ SUCCESS:", snap.data());
+    } else {
+      console.log("❌ Firestore READ FAILED");
+    }
+
+  } catch (err) {
+    console.error("🔥 Firestore ERROR:", err);
+  }
+}
+
+testFirestoreConnection();
 
 // ── Matrix background ─────────────────────────────────────────
 const canvas = document.getElementById('matrix-canvas');
