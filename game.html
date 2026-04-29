@@ -731,71 +731,63 @@ function watchSystemStatus(){
     if(!snap.exists()) return;
     const d = snap.data();
 
-    // ── Mission Live / Pause / Resume ──
-    const paused   = d.paused      || false;
-    const live     = d.missionLive || false;
-    const forceEnd = d.forceEnd    || false;
-    const reset    = d.reset       || false;
-
-    if(reset && !prevAdminState.reset){
-      window.location.href = 'login.html';
-      return;
-    }
-    if(forceEnd && !prevAdminState.forceEnd){ clearInterval(timerInt); showFailure(); return; }
-
+    // Timer Control (Pause / Resume)
+    const paused = d.timerPaused || false;
     if(paused){
       gameState.timerRunning = false;
       document.getElementById('pauseOverlay').classList.add('active');
-    } else if(live){
+    } else {
       gameState.timerRunning = true;
       document.getElementById('pauseOverlay').classList.remove('active');
     }
 
-    // ── Broadcast message ──
-    const broadcast = d.broadcast || '';
-    if(broadcast && broadcast !== prevAdminState.broadcast){
-      showHQMessage(broadcast);
-      addFeedItem('[HQ] '+broadcast,'hq');
+    // Force End Game
+    if(d.forceEnd && !prevAdminState.forceEnd){
+      clearInterval(timerInt);
+      showFailure();
+      return;
     }
 
-    // ── Time Bonus ──
-    const timeBonus = d.timeBonus || 0;
-    if(timeBonus && timeBonus !== prevAdminState.timeBonus){
-      gameState.timeLeft = Math.min(1800, gameState.timeLeft + 120);
-      showTimerEffect('+2:00 FROM HQ', 'green');
-      addFeedItem('[HQ] +2 MINUTES TIME BONUS RECEIVED','success');
+    // Global Broadcast
+    if(d.messageBroadcast && d.messageBroadcast !== prevAdminState.messageBroadcast){
+      showHQMessage(d.messageBroadcast);
+      addFeedItem('[HQ] ' + d.messageBroadcast, 'hq');
     }
 
-    // ── Time Penalty ──
-    const timePenalty = d.timePenalty || 0;
-    if(timePenalty && timePenalty !== prevAdminState.timePenalty){
-      gameState.timeLeft = Math.max(0, gameState.timeLeft - 60);
-      showTimerEffect('⚠ TIME PENALTY', 'red');
-      addFeedItem('[HQ] ⚠ TIME PENALTY APPLIED','alert');
+    // Time Bonus from Admin
+    if(d.timeBonus && d.timeBonus !== prevAdminState.timeBonus){
+      gameState.timeLeft = Math.min(1800, gameState.timeLeft + (d.timeBonus || 120));
+      showTimerEffect(`+${Math.floor((d.timeBonus||120)/60)}:00 FROM HQ`, 'green');
+      addFeedItem(`[HQ] TIME BONUS RECEIVED`, 'success');
     }
 
-    // ── Alert Mode ──
-    const alertMode = d.alertMode || '';
-    if(alertMode && alertMode !== prevAdminState.alertMode){
-      triggerAlertMode(alertMode);
+    // Time Penalty from Admin
+    if(d.timePenalty && d.timePenalty !== prevAdminState.timePenalty){
+      gameState.timeLeft = Math.max(0, gameState.timeLeft - (d.timePenalty || 60));
+      showTimerEffect('⚠ TIME PENALTY APPLIED', 'red');
+      addFeedItem(`[HQ] TIME PENALTY`, 'alert');
     }
 
-    // ── Glitch Event ──
-    const glitch = d.glitchEvent || 0;
-    if(glitch && glitch !== prevAdminState.glitchEvent){
+    // Alert Modes
+    if(d.alertMode && d.alertMode !== prevAdminState.alertMode){
+      triggerAlertMode(d.alertMode);
+    }
+
+    // Glitch Event
+    if(d.glitchEvent && d.glitchEvent !== prevAdminState.glitchEvent){
       triggerGlitch();
     }
 
-    // ── Force Jump Level ──
-    const jumpLevel = d.jumpLevel || 0;
-    if(jumpLevel && jumpLevel !== prevAdminState.jumpLevel && jumpLevel >= 1 && jumpLevel <= 20){
-      gameState.currentLevel = jumpLevel;
-      loadLevel(jumpLevel);
-      addFeedItem('[HQ] FORCE JUMPED TO LEVEL '+jumpLevel,'warning');
+    // Force Jump Level
+    if(d.jumpLevel && d.jumpLevel !== prevAdminState.jumpLevel){
+      gameState.currentLevel = d.jumpLevel;
+      loadLevel(gameState.currentLevel);
+      addFeedItem(`[ADMIN] FORCE JUMPED TO LEVEL ${d.jumpLevel}`, 'warning');
     }
 
     prevAdminState = {...d};
-  }, err=>{ console.error('System listener error:',err); });
+  });
+}, err=>{ console.error('System listener error:',err); });
 }
 
 // Watch leaderboard to compute rank
