@@ -871,7 +871,7 @@ window.launchMission = async function(){
 window.pauseTimer = async function(){
   setBtn('btnPause',true);
   try {
-    await setDoc(doc(db,'system','status'),{timerPaused:true,missionStatus:'ACTIVE'},{merge:true});
+    await setDoc(doc(db,'system','status'),{timerPaused:true,missionStatus:'ACTIVE',commandId:Date.now()},{merge:true});
     addLog('Global timer paused','warn');
     showToast('⏸ TIMER PAUSED','info');
   } catch(e){ showToast('⚠ FIREBASE ERROR','error'); }
@@ -881,7 +881,7 @@ window.pauseTimer = async function(){
 window.resumeTimer = async function(){
   setBtn('btnResume',true);
   try {
-    await setDoc(doc(db,'system','status'),{timerPaused:false,missionStatus:'ACTIVE'},{merge:true});
+    await setDoc(doc(db,'system','status'),{timerPaused:false,missionStatus:'ACTIVE',commandId:Date.now()},{merge:true});
     addLog('Global timer resumed','info');
     showToast('▶ TIMER RESUMED','info');
   } catch(e){ showToast('⚠ FIREBASE ERROR','error'); }
@@ -927,7 +927,10 @@ window.resetAllTeams = async function(){
       const batch=writeBatch(db);
       (await getDocs(collection(db,'teams'))).docs.forEach(d=>batch.delete(d.ref));
       (await getDocs(collection(db,'leaderboard'))).docs.forEach(d=>batch.delete(d.ref));
-      batch.set(doc(db,'system','status'),{missionStatus:'STANDBY',timerPaused:false,forceEnd:false,startedAt:null});
+      batch.set(doc(db,'system','status'),{
+        missionStatus:'STANDBY',timerPaused:false,forceEnd:false,startedAt:null,
+        resetTs:serverTimestamp(), commandId:Date.now()
+      });
       await batch.commit();
       addLog('ALL TEAM DATA RESET — Firestore cleared','danger');
       showToast('↺ ALL DATA RESET','error');
@@ -938,7 +941,7 @@ window.resetAllTeams = async function(){
 
 // ── Special Events ─────────────────────────────────────────────
 async function writeEffect(type){
-  await setDoc(doc(db,'system','status'),{screenEffect:type, effectTs:serverTimestamp()},{merge:true});
+  await setDoc(doc(db,'system','status'),{screenEffect:type, effectTs:serverTimestamp(), commandId:Date.now()},{merge:true});
 }
 
 window.triggerGlitch     = ()=>{ writeEffect('glitch');     addLog('Glitch event injected (Lvl10)','warn');    showToast('👾 GLITCH INJECTED','warn'); };
@@ -954,7 +957,7 @@ window.injectEffect      = (t)=>eval(`trigger${t.charAt(0).toUpperCase()+t.slice
 window.sendBroadcast = async function(){
   const msg = document.getElementById('broadcastMsg').value.trim();
   if(!msg){ showToast('⚠ MESSAGE IS EMPTY','error'); return; }
-  await setDoc(doc(db,'system','status'),{messageBroadcast:msg, broadcastTs:serverTimestamp()},{merge:true});
+  await setDoc(doc(db,'system','status'),{messageBroadcast:msg, broadcastTs:serverTimestamp(), commandId:Date.now()},{merge:true});
   addLog(`Broadcast sent: "${msg}"`, 'success');
   showToast('📡 BROADCAST SENT','success');
 };
