@@ -3,24 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CURE-LOCK | Admin Command Center</title>
+<title>CURE-LOCK | Admin Command Center v2</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --neon-blue:#00d4ff; --neon-green:#00ff88; --neon-red:#ff2244;
-  --neon-yellow:#ffdd00; --neon-orange:#ff8c00;
-  --bg-dark:#020811; --bg-card:rgba(0,20,40,0.8);
+  --neon-yellow:#ffdd00; --neon-orange:#ff8c00; --neon-purple:#c400ff;
+  --bg-dark:#020811; --bg-card:rgba(0,20,40,0.85);
   --panel-border:rgba(0,212,255,0.18); --text-dim:rgba(0,212,255,0.45);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg-dark);color:var(--neon-blue);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden;}
 #matrix-canvas{position:fixed;top:0;left:0;width:100%;height:100%;opacity:0.04;z-index:0;pointer-events:none;}
 .scanlines{position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.12) 2px,rgba(0,0,0,0.12) 4px);z-index:1;pointer-events:none;}
-.content{position:relative;z-index:2;max-width:1100px;margin:0 auto;padding:20px;}
+.content{position:relative;z-index:2;max-width:1200px;margin:0 auto;padding:16px;}
 
 /* AUTH OVERLAY */
-.auth-overlay{position:fixed;inset:0;z-index:50;background:var(--bg-dark);display:flex;align-items:center;justify-content:center;}
-.auth-box{background:var(--bg-card);border:1px solid var(--panel-border);border-radius:4px;padding:40px;width:380px;text-align:center;position:relative;}
+.auth-overlay{position:fixed;inset:0;z-index:100;background:var(--bg-dark);display:flex;align-items:center;justify-content:center;}
+.auth-box{background:var(--bg-card);border:1px solid rgba(255,34,68,0.3);border-radius:4px;padding:40px;width:400px;text-align:center;position:relative;}
 .auth-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--neon-red),transparent);}
 .auth-title{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;letter-spacing:4px;color:var(--neon-red);margin-bottom:6px;}
 .auth-sub{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-bottom:24px;}
@@ -31,48 +31,87 @@ body{background:var(--bg-dark);color:var(--neon-blue);font-family:'Rajdhani',san
 .auth-error{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--neon-red);margin-top:10px;display:none;letter-spacing:2px;}
 
 /* HEADER */
-header{display:flex;justify-content:space-between;align-items:center;padding:12px 0;margin-bottom:24px;border-bottom:1px solid var(--panel-border);}
+header{display:flex;justify-content:space-between;align-items:center;padding:10px 0;margin-bottom:16px;border-bottom:1px solid var(--panel-border);}
 .logo{font-family:'Orbitron',sans-serif;font-size:18px;font-weight:900;letter-spacing:5px;text-shadow:0 0 15px var(--neon-blue);}
 .logo span{color:var(--neon-red);}
 .admin-badge{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;padding:6px 14px;border:1px solid rgba(255,34,68,0.4);color:var(--neon-red);border-radius:2px;}
+.header-right{display:flex;gap:12px;align-items:center;}
 
-.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+/* TOP STATS */
+.mini-stats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px;}
+.mini-stat{background:var(--bg-card);border:1px solid var(--panel-border);border-radius:3px;padding:12px;text-align:center;position:relative;overflow:hidden;}
+.mini-stat::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--neon-blue),transparent);}
+.mini-stat-val{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;display:block;}
+.mini-stat-lbl{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--text-dim);}
+
+/* TABS */
+.tab-bar{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--panel-border);}
+.tab-btn{font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;padding:10px 16px;background:transparent;border:1px solid transparent;border-bottom:none;color:var(--text-dim);cursor:pointer;transition:all 0.2s;border-radius:3px 3px 0 0;}
+.tab-btn:hover{color:var(--neon-blue);border-color:var(--panel-border);}
+.tab-btn.active{color:var(--neon-blue);border-color:var(--panel-border);background:var(--bg-card);border-bottom:1px solid var(--bg-card);margin-bottom:-1px;}
+.tab-pane{display:none;}
+.tab-pane.active{display:block;}
+
+/* PANELS */
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.admin-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;}
 .panel{background:var(--bg-card);border:1px solid var(--panel-border);border-radius:3px;overflow:hidden;position:relative;}
 .panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--neon-blue),transparent);}
-.panel-head{padding:12px 16px;border-bottom:1px solid var(--panel-border);font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;display:flex;align-items:center;gap:6px;}
-.ph-dot{width:6px;height:6px;border-radius:50%;background:var(--neon-green);animation:blink 1s infinite;}
+.panel.red-accent::before{background:linear-gradient(90deg,transparent,var(--neon-red),transparent);}
+.panel.green-accent::before{background:linear-gradient(90deg,transparent,var(--neon-green),transparent);}
+.panel.yellow-accent::before{background:linear-gradient(90deg,transparent,var(--neon-yellow),transparent);}
+.panel.purple-accent::before{background:linear-gradient(90deg,transparent,var(--neon-purple),transparent);}
+.panel-head{padding:10px 14px;border-bottom:1px solid var(--panel-border);font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:3px;display:flex;align-items:center;gap:6px;}
+.ph-dot{width:6px;height:6px;border-radius:50%;background:var(--neon-green);flex-shrink:0;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.ph-dot{animation:blink 1.5s infinite;}
 .ph-dot.red{background:var(--neon-red);}
-.panel-body{padding:16px;}
+.ph-dot.yellow{background:var(--neon-yellow);}
+.ph-dot.purple{background:var(--neon-purple);}
+.panel-body{padding:14px;}
+.full-panel{grid-column:1/-1;}
 
-.ctrl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
-.ctrl-btn{font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;padding:12px;border:1px solid currentColor;background:transparent;cursor:pointer;transition:all 0.3s;text-align:center;border-radius:2px;}
-.ctrl-btn:hover{background:rgba(0,212,255,0.05);box-shadow:0 0 12px currentColor;}
+/* BUTTONS */
+.ctrl-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.ctrl-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;}
+.ctrl-grid-1{display:grid;grid-template-columns:1fr;gap:7px;}
+.ctrl-btn{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:1.5px;padding:11px 8px;border:1px solid currentColor;background:transparent;cursor:pointer;transition:all 0.25s;text-align:center;border-radius:2px;line-height:1.3;}
+.ctrl-btn:hover:not(:disabled){filter:brightness(1.3);box-shadow:0 0 14px currentColor;background:rgba(255,255,255,0.03);}
 .ctrl-btn.blue{color:var(--neon-blue);}
 .ctrl-btn.green{color:var(--neon-green);}
 .ctrl-btn.red{color:var(--neon-red);}
 .ctrl-btn.yellow{color:var(--neon-yellow);}
 .ctrl-btn.orange{color:var(--neon-orange);}
+.ctrl-btn.purple{color:var(--neon-purple);}
 .ctrl-btn.full{grid-column:1/-1;}
-.ctrl-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.ctrl-btn:disabled{opacity:0.35;cursor:not-allowed;}
+.ctrl-btn.danger-btn{border-color:var(--neon-red);color:var(--neon-red);background:rgba(255,34,68,0.04);}
 
-.mini-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
-.mini-stat{background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.1);border-radius:2px;padding:12px;text-align:center;}
-.mini-stat-val{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;display:block;}
-.mini-stat-lbl{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim);}
+/* SECTION LABEL */
+.section-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim);margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid rgba(0,212,255,0.07);}
 
+/* STATUS ROW */
+.status-row{display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:10px;padding:7px 10px;border:1px solid rgba(0,212,255,0.1);border-radius:2px;margin-bottom:6px;}
+
+/* TEAM TABLE */
 .team-table{width:100%;border-collapse:collapse;}
 thead tr{border-bottom:1px solid var(--panel-border);}
-th{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim);padding:8px 10px;text-align:left;font-weight:normal;}
+th{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--text-dim);padding:8px 8px;text-align:left;font-weight:normal;}
 tbody tr{border-bottom:1px solid rgba(0,212,255,0.05);transition:background 0.2s;}
 tbody tr:hover{background:rgba(0,212,255,0.03);}
-td{font-family:'Rajdhani',sans-serif;font-size:13px;padding:10px;color:rgba(0,212,255,0.8);}
-.td-mono{font-family:'Share Tech Mono',monospace;font-size:11px;}
-.td-name{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;color:#fff;}
+td{font-family:'Rajdhani',sans-serif;font-size:13px;padding:8px 8px;color:rgba(0,212,255,0.8);}
+.td-mono{font-family:'Share Tech Mono',monospace;font-size:10px;}
+.td-name{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;color:#fff;}
 .badge{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;padding:2px 6px;border-radius:2px;}
 .badge.active{color:var(--neon-green);border:1px solid rgba(0,255,136,0.2);background:rgba(0,255,136,0.05);}
 .badge.complete{color:var(--neon-blue);border:1px solid rgba(0,212,255,0.2);}
+.badge.paused{color:var(--neon-orange);border:1px solid rgba(255,140,0,0.2);background:rgba(255,140,0,0.05);}
+.td-timer-btns{display:flex;gap:4px;flex-wrap:wrap;}
+.td-timer-btn{font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 5px;border:1px solid rgba(0,212,255,0.2);background:transparent;color:var(--text-dim);cursor:pointer;border-radius:2px;transition:all 0.2s;}
+.td-timer-btn:hover{border-color:var(--neon-blue);color:var(--neon-blue);}
+.td-timer-btn.red:hover{border-color:var(--neon-red);color:var(--neon-red);}
 
+/* LOG */
 .log-wrap{max-height:200px;overflow-y:auto;}
 .log-wrap::-webkit-scrollbar{width:3px;}
 .log-wrap::-webkit-scrollbar-thumb{background:rgba(0,212,255,0.15);}
@@ -83,14 +122,86 @@ td{font-family:'Rajdhani',sans-serif;font-size:13px;padding:10px;color:rgba(0,21
 .log-line.warn{color:var(--neon-orange);}
 .log-line.danger{color:var(--neon-red);}
 
-.toast{position:fixed;bottom:24px;right:24px;z-index:100;padding:14px 24px;border-radius:2px;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;transform:translateY(80px);opacity:0;transition:all 0.3s;}
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;z-index:200;padding:12px 22px;border-radius:2px;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;transform:translateY(80px);opacity:0;transition:all 0.3s;max-width:320px;}
 .toast.show{transform:translateY(0);opacity:1;}
 .toast.success{background:rgba(0,255,136,0.1);border:1px solid var(--neon-green);color:var(--neon-green);}
 .toast.error{background:rgba(255,34,68,0.1);border:1px solid var(--neon-red);color:var(--neon-red);}
 .toast.info{background:rgba(0,212,255,0.1);border:1px solid var(--neon-blue);color:var(--neon-blue);}
+.toast.warn{background:rgba(255,140,0,0.1);border:1px solid var(--neon-orange);color:var(--neon-orange);}
 
-.full-panel{grid-column:1/-1;}
-@media(max-width:700px){.admin-grid{grid-template-columns:1fr;}.ctrl-grid{grid-template-columns:1fr;}}
+/* BROADCAST INPUT */
+.broadcast-input{width:100%;background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.15);border-radius:2px;color:#fff;font-family:'Share Tech Mono',monospace;font-size:12px;padding:10px;outline:none;transition:all 0.3s;margin-bottom:8px;}
+.broadcast-input:focus{border-color:var(--neon-blue);}
+
+/* SELECT */
+.ctrl-select{width:100%;background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.15);color:var(--neon-blue);font-family:'Share Tech Mono',monospace;font-size:10px;padding:8px;border-radius:2px;outline:none;margin-bottom:8px;}
+.ctrl-select option{background:#020811;}
+
+/* ALERT PRESETS */
+.alert-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.alert-preset{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;padding:8px 10px;border:1px solid currentColor;background:transparent;cursor:pointer;transition:all 0.2s;text-align:left;border-radius:2px;}
+.alert-preset:hover{filter:brightness(1.4);background:rgba(255,255,255,0.02);}
+.alert-preset.warn{color:var(--neon-orange);}
+.alert-preset.danger{color:var(--neon-red);}
+.alert-preset.info{color:var(--neon-blue);}
+.alert-preset.critical{color:var(--neon-purple);}
+.alert-preset.notice{color:var(--neon-green);}
+
+/* SCORE MODIFY */
+.score-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
+.team-pick-row{display:flex;gap:8px;margin-bottom:8px;}
+.team-pick-row .ctrl-select{margin-bottom:0;flex:1;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:150;background:rgba(2,8,17,0.92);align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal-box{background:var(--bg-card);border:1px solid var(--panel-border);border-radius:4px;padding:30px;width:420px;position:relative;}
+.modal-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--neon-red),transparent);}
+.modal-title{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:3px;color:var(--neon-red);margin-bottom:8px;}
+.modal-body{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:20px;line-height:1.6;}
+.modal-btns{display:flex;gap:10px;}
+.modal-btn{flex:1;font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;padding:12px;border:1px solid currentColor;background:transparent;cursor:pointer;transition:all 0.2s;border-radius:2px;}
+.modal-btn:hover{filter:brightness(1.3);}
+.modal-btn.red{color:var(--neon-red);}
+.modal-btn.gray{color:var(--text-dim);}
+
+/* SMARTBOARD MODE */
+.smartboard-overlay{display:none;position:fixed;inset:0;z-index:180;background:var(--bg-dark);overflow:hidden;}
+.smartboard-overlay.show{display:block;}
+.sb-content{position:relative;z-index:2;height:100vh;padding:20px 40px;display:flex;flex-direction:column;}
+.sb-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--panel-border);}
+.sb-logo{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;letter-spacing:8px;}
+.sb-logo span{color:var(--neon-red);}
+.sb-mission-timer{font-family:'Orbitron',sans-serif;font-size:48px;font-weight:900;color:var(--neon-green);text-shadow:0 0 30px rgba(0,255,136,0.4);text-align:center;}
+.sb-body{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.sb-panel{background:var(--bg-card);border:1px solid var(--panel-border);border-radius:3px;padding:20px;overflow:hidden;}
+.sb-panel-title{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:4px;margin-bottom:16px;color:var(--neon-green);}
+.sb-close{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px;padding:8px 16px;border:1px solid var(--panel-border);background:transparent;color:var(--text-dim);cursor:pointer;border-radius:2px;}
+.sb-close:hover{border-color:var(--neon-red);color:var(--neon-red);}
+.sb-rank-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(0,212,255,0.06);}
+.sb-rank{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;width:30px;text-align:center;}
+.sb-rank.r1{color:#ffd700;}
+.sb-rank.r2{color:#c0c0c0;}
+.sb-rank.r3{color:#cd7f32;}
+.sb-team{flex:1;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;color:#fff;}
+.sb-score{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;color:var(--neon-green);}
+
+/* INLINE NUM INPUT */
+.num-input{background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.2);color:var(--neon-blue);font-family:'Share Tech Mono',monospace;font-size:12px;padding:6px 10px;border-radius:2px;outline:none;width:100%;margin-bottom:8px;}
+
+/* DIVIDER */
+.divider{height:1px;background:rgba(0,212,255,0.08);margin:10px 0;}
+
+@media(max-width:900px){
+  .admin-grid,.admin-grid-3{grid-template-columns:1fr;}
+  .mini-stats{grid-template-columns:repeat(3,1fr);}
+  .tab-btn{font-size:8px;padding:8px 10px;letter-spacing:1px;}
+}
+@media(max-width:600px){
+  .mini-stats{grid-template-columns:repeat(2,1fr);}
+  .ctrl-grid{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>
@@ -109,12 +220,65 @@ td{font-family:'Rajdhani',sans-serif;font-size:13px;padding:10px;color:rgba(0,21
   </div>
 </div>
 
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box">
+    <div class="modal-title" id="modalTitle">CONFIRM ACTION</div>
+    <div class="modal-body" id="modalBody">Are you sure?</div>
+    <div class="modal-btns">
+      <button class="modal-btn gray" onclick="closeModal()">✕ CANCEL</button>
+      <button class="modal-btn red" id="modalConfirmBtn">▶ CONFIRM</button>
+    </div>
+  </div>
+</div>
+
+<!-- SMARTBOARD MODE -->
+<div class="smartboard-overlay" id="smartboardOverlay">
+  <canvas id="sb-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.04;z-index:1;pointer-events:none;"></canvas>
+  <div class="scanlines"></div>
+  <div class="sb-content">
+    <div class="sb-header">
+      <div class="sb-logo">CURE<span>-</span>LOCK <span style="font-size:14px;letter-spacing:3px;color:var(--text-dim)">// LIVE MISSION</span></div>
+      <div style="text-align:center;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:3px;margin-bottom:4px">ELAPSED</div>
+        <div class="sb-mission-timer" id="sbMissionTimer">00:00</div>
+      </div>
+      <button class="sb-close" onclick="exitSmartboard()">✕ EXIT</button>
+    </div>
+    <div class="sb-body">
+      <div class="sb-panel">
+        <div class="sb-panel-title">▸ TOP SENTINELS</div>
+        <div id="sbLeaderboard"></div>
+      </div>
+      <div class="sb-panel">
+        <div class="sb-panel-title">▸ MISSION INTEL</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+          <div style="background:rgba(0,212,255,0.04);border:1px solid var(--panel-border);border-radius:3px;padding:16px;text-align:center;">
+            <div style="font-family:'Orbitron',sans-serif;font-size:32px;font-weight:900;color:var(--neon-blue)" id="sbTeams">0</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:2px">TEAMS ACTIVE</div>
+          </div>
+          <div style="background:rgba(0,255,136,0.04);border:1px solid rgba(0,255,136,0.15);border-radius:3px;padding:16px;text-align:center;">
+            <div style="font-family:'Orbitron',sans-serif;font-size:32px;font-weight:900;color:var(--neon-green)" id="sbComplete">0</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:2px">COMPLETED</div>
+          </div>
+        </div>
+        <div style="background:rgba(0,212,255,0.04);border:1px solid var(--panel-border);border-radius:3px;padding:16px;text-align:center;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-bottom:6px">MISSION STATUS</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;" id="sbStatus">STANDBY</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
 <div class="content" id="adminContent" style="display:none">
   <header>
     <div class="logo">CURE<span>-</span>LOCK</div>
-    <div style="display:flex;gap:12px;align-items:center">
-      <div class="admin-badge">ADMIN CONSOLE</div>
-      <a href="index.html" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);text-decoration:none">← EXIT</a>
+    <div class="header-right">
+      <div class="admin-badge">ADMIN CONSOLE v2</div>
+      <button class="ctrl-btn blue" style="font-size:9px;padding:6px 14px" onclick="openSmartboard()">📺 SMARTBOARD</button>
+      <a href="index.html" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);text-decoration:none;letter-spacing:2px">← EXIT</a>
     </div>
   </header>
 
@@ -122,79 +286,327 @@ td{font-family:'Rajdhani',sans-serif;font-size:13px;padding:10px;color:rgba(0,21
     <div class="mini-stat"><span class="mini-stat-val" style="color:var(--neon-blue)" id="s-teams">0</span><span class="mini-stat-lbl">TOTAL TEAMS</span></div>
     <div class="mini-stat"><span class="mini-stat-val" style="color:var(--neon-green)" id="s-complete">0</span><span class="mini-stat-lbl">COMPLETED</span></div>
     <div class="mini-stat"><span class="mini-stat-val" style="color:var(--neon-red)" id="s-active">0</span><span class="mini-stat-lbl">ACTIVE NOW</span></div>
+    <div class="mini-stat"><span class="mini-stat-val" style="color:var(--neon-yellow)" id="s-topscore">—</span><span class="mini-stat-lbl">TOP SCORE</span></div>
+    <div class="mini-stat"><span class="mini-stat-val" style="color:var(--neon-orange)" id="s-hints">0</span><span class="mini-stat-lbl">HINTS USED</span></div>
+    <div class="mini-stat"><span class="mini-stat-val" style="color:var(--neon-green)" id="s-status">STANDBY</span><span class="mini-stat-lbl">MISSION</span></div>
   </div>
 
-  <div class="admin-grid">
-    <!-- MISSION CONTROLS -->
-    <div class="panel">
-      <div class="panel-head"><div class="ph-dot red"></div>MISSION CONTROLS</div>
-      <div class="panel-body">
-        <div class="ctrl-grid">
-          <button class="ctrl-btn green" id="btnLaunch" onclick="launchMission()">▶ LAUNCH MISSION</button>
-          <button class="ctrl-btn orange" id="btnPause" onclick="pauseTimer()">⏸ PAUSE TIMER</button>
-          <button class="ctrl-btn blue" id="btnResume" onclick="resumeTimer()">▶ RESUME TIMER</button>
-          <button class="ctrl-btn red" id="btnForce" onclick="forceEndGame()">■ FORCE END</button>
-          <button class="ctrl-btn yellow full" id="btnReset" onclick="resetAllTeams()">↺ RESET ALL TEAMS</button>
-        </div>
-        <button class="ctrl-btn blue full" style="margin-top:8px;width:100%" onclick="exportCSV()">↓ EXPORT RESULTS CSV</button>
-      </div>
-    </div>
+  <!-- TABS -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('mission')">⚡ MISSION</button>
+    <button class="tab-btn" onclick="switchTab('timers')">⏱ TIME CTRL</button>
+    <button class="tab-btn" onclick="switchTab('levels')">🎮 LEVELS</button>
+    <button class="tab-btn" onclick="switchTab('alerts')">📡 ALERTS</button>
+    <button class="tab-btn" onclick="switchTab('scores')">🏆 SCORES</button>
+    <button class="tab-btn" onclick="switchTab('teams')">👾 TEAMS</button>
+    <button class="tab-btn" onclick="switchTab('log')">📋 LOG</button>
+  </div>
 
-    <!-- SYSTEM STATUS -->
-    <div class="panel">
-      <div class="panel-head"><div class="ph-dot"></div>SYSTEM STATUS</div>
-      <div class="panel-body">
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px;border:1px solid rgba(0,212,255,0.1);border-radius:2px">
-            <span>MISSION STATUS</span><span style="color:var(--neon-green)" id="sys-status">STANDBY</span>
+  <!-- TAB: MISSION -->
+  <div class="tab-pane active" id="tab-mission">
+    <div class="admin-grid">
+      <div class="panel red-accent">
+        <div class="panel-head"><div class="ph-dot red"></div>MISSION CONTROLS</div>
+        <div class="panel-body">
+          <div class="section-label">GLOBAL LAUNCH SEQUENCE</div>
+          <div class="ctrl-grid" style="margin-bottom:10px">
+            <button class="ctrl-btn green" id="btnLaunch" onclick="launchMission()">▶ LAUNCH MISSION</button>
+            <button class="ctrl-btn orange" id="btnPause" onclick="pauseTimer()">⏸ PAUSE TIMER</button>
+            <button class="ctrl-btn blue" id="btnResume" onclick="resumeTimer()">▶ RESUME TIMER</button>
+            <button class="ctrl-btn yellow" id="btnLock" onclick="lockEntries()">🔒 LOCK ENTRIES</button>
+            <button class="ctrl-btn blue" id="btnUnlock" onclick="unlockEntries()">🔓 UNLOCK ENTRIES</button>
+            <button class="ctrl-btn orange" id="btnRestart" onclick="restartTimer()">↺ RESTART TIMER</button>
           </div>
-          <div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px;border:1px solid rgba(0,212,255,0.1);border-radius:2px">
-            <span>FIREBASE</span><span id="fb-status" style="color:var(--neon-yellow)">CONNECTING...</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px;border:1px solid rgba(0,212,255,0.1);border-radius:2px">
-            <span>LEADERBOARD</span><span style="color:var(--neon-green)">LIVE</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px;border:1px solid rgba(0,212,255,0.1);border-radius:2px">
-            <span>LAST REFRESH</span><span id="lastRefresh" style="color:var(--text-dim)">—</span>
+          <div class="divider"></div>
+          <div class="ctrl-grid">
+            <button class="ctrl-btn red danger-btn" id="btnForce" onclick="forceEndGame()">■ FORCE END</button>
+            <button class="ctrl-btn red danger-btn" id="btnReset" onclick="resetAllTeams()">☠ RESET ALL</button>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- TEAM MONITOR -->
+      <div class="panel">
+        <div class="panel-head"><div class="ph-dot"></div>SYSTEM STATUS</div>
+        <div class="panel-body">
+          <div class="status-row"><span>MISSION STATUS</span><span style="color:var(--neon-green)" id="sys-status">STANDBY</span></div>
+          <div class="status-row"><span>FIREBASE</span><span id="fb-status" style="color:var(--neon-yellow)">CONNECTING...</span></div>
+          <div class="status-row"><span>LEADERBOARD</span><span style="color:var(--neon-green)">LIVE</span></div>
+          <div class="status-row"><span>ENTRIES LOCKED</span><span id="sys-locked" style="color:var(--text-dim)">NO</span></div>
+          <div class="status-row"><span>LAST REFRESH</span><span id="lastRefresh" style="color:var(--text-dim)">—</span></div>
+          <div class="divider"></div>
+          <button class="ctrl-btn blue full" onclick="exportCSV()">↓ EXPORT CSV</button>
+        </div>
+      </div>
+
+      <div class="panel yellow-accent">
+        <div class="panel-head"><div class="ph-dot yellow"></div>SPECIAL EVENTS</div>
+        <div class="panel-body">
+          <div class="section-label">LEVEL EVENTS</div>
+          <div class="ctrl-grid" style="margin-bottom:10px">
+            <button class="ctrl-btn purple" onclick="triggerGlitch()">👾 GLITCH EVENT (LVL10)</button>
+            <button class="ctrl-btn yellow" onclick="triggerYellowAlert()">⚡ YELLOW ALERT (LVL16)</button>
+          </div>
+          <div class="section-label">GLOBAL EMERGENCY</div>
+          <div class="ctrl-grid-3">
+            <button class="ctrl-btn red" onclick="triggerSiren()">🚨 RED SIREN</button>
+            <button class="ctrl-btn orange" onclick="triggerBlackout()">⬛ BLACKOUT</button>
+            <button class="ctrl-btn purple" onclick="triggerBreach()">💀 BREACH POPUP</button>
+            <button class="ctrl-btn red" onclick="triggerEnemySurge()">⬆ ENEMY SURGE</button>
+            <button class="ctrl-btn blue" onclick="triggerGhostMsg()">👻 GHOST MSG</button>
+            <button class="ctrl-btn yellow" onclick="triggerFinalCountdown()">⏳ FINAL CNTDOWN</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="ph-dot"></div>CUSTOM BROADCAST</div>
+        <div class="panel-body">
+          <div class="section-label">TYPE CUSTOM MESSAGE</div>
+          <textarea class="broadcast-input" id="broadcastMsg" rows="3" placeholder="e.g. Keep moving, Sentinel. 10 minutes remaining..."></textarea>
+          <div class="ctrl-grid">
+            <button class="ctrl-btn green" onclick="sendBroadcast()">📡 BROADCAST NOW</button>
+            <button class="ctrl-btn blue" onclick="clearBroadcast()">✕ CLEAR MESSAGE</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: TIMERS -->
+  <div class="tab-pane" id="tab-timers">
+    <div class="admin-grid">
+      <div class="panel green-accent">
+        <div class="panel-head"><div class="ph-dot"></div>GLOBAL TIME CONTROLS</div>
+        <div class="panel-body">
+          <div class="section-label">ADD TIME (ALL TEAMS)</div>
+          <div class="ctrl-grid" style="margin-bottom:10px">
+            <button class="ctrl-btn green" onclick="globalTimeAdjust(60)">+1 MIN ALL</button>
+            <button class="ctrl-btn green" onclick="globalTimeAdjust(300)">+5 MIN ALL</button>
+          </div>
+          <div class="section-label">REDUCE TIME (ALL TEAMS)</div>
+          <div class="ctrl-grid" style="margin-bottom:10px">
+            <button class="ctrl-btn red" onclick="globalTimeAdjust(-60)">-1 MIN ALL</button>
+            <button class="ctrl-btn red" onclick="globalTimeAdjust(-300)">-5 MIN ALL</button>
+          </div>
+          <div class="divider"></div>
+          <div class="section-label">TIMER STATE</div>
+          <div class="ctrl-grid">
+            <button class="ctrl-btn yellow" onclick="freezeAllTimers()">❄ FREEZE ALL</button>
+            <button class="ctrl-btn blue" onclick="resumeAllTimers()">▶ RESUME ALL</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="ph-dot red"></div>INDIVIDUAL TEAM TIME CONTROL</div>
+        <div class="panel-body">
+          <div class="section-label">SELECT TEAM</div>
+          <select class="ctrl-select" id="teamSelectTimer">
+            <option value="">-- SELECT TEAM --</option>
+          </select>
+          <div class="section-label">QUICK ADJUST</div>
+          <div class="ctrl-grid-3" style="margin-bottom:10px">
+            <button class="ctrl-btn green" onclick="teamTimeAdjust(30)">+30 SEC</button>
+            <button class="ctrl-btn green" onclick="teamTimeAdjust(60)">+1 MIN</button>
+            <button class="ctrl-btn green" onclick="teamTimeAdjust(300)">+5 MIN</button>
+            <button class="ctrl-btn red" onclick="teamTimeAdjust(-30)">-30 SEC</button>
+            <button class="ctrl-btn red" onclick="teamTimeAdjust(-60)">-1 MIN</button>
+            <button class="ctrl-btn red" onclick="teamTimeAdjust(-300)">-5 MIN</button>
+          </div>
+          <div class="section-label">SET CUSTOM TIME (SECONDS)</div>
+          <input type="number" class="num-input" id="customTimeSec" placeholder="e.g. 1800 (= 30 min)" min="0" max="7200">
+          <div class="ctrl-grid">
+            <button class="ctrl-btn blue" onclick="setCustomTime()">⏱ SET TIME</button>
+            <button class="ctrl-btn orange" onclick="restoreDefaultTimer()">↺ RESTORE DEFAULT</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: LEVELS -->
+  <div class="tab-pane" id="tab-levels">
+    <div class="admin-grid">
+      <div class="panel">
+        <div class="panel-head"><div class="ph-dot yellow"></div>GLOBAL LEVEL CONTROL</div>
+        <div class="panel-body">
+          <div class="section-label">FORCE ALL TEAMS TO LEVEL</div>
+          <select class="ctrl-select" id="globalLevelSelect">
+            <option value="">-- SELECT LEVEL --</option>
+            <option value="1">Level 1</option>
+            <option value="2">Level 2</option>
+            <option value="3">Level 3</option>
+            <option value="4">Level 4</option>
+            <option value="5">Level 5</option>
+            <option value="6">Level 6</option>
+            <option value="7">Level 7</option>
+            <option value="8">Level 8</option>
+            <option value="9">Level 9</option>
+            <option value="10">Level 10 (Glitch Event)</option>
+            <option value="11">Level 11</option>
+            <option value="12">Level 12</option>
+            <option value="13">Level 13</option>
+            <option value="14">Level 14</option>
+            <option value="15">Level 15</option>
+            <option value="16">Level 16 (Yellow Alert)</option>
+          </select>
+          <button class="ctrl-btn yellow full" onclick="forceAllLevel()">⚡ FORCE ALL TEAMS TO LEVEL</button>
+          <div class="divider"></div>
+          <div class="section-label">UNLOCK NEXT LEVEL (ALL)</div>
+          <button class="ctrl-btn green full" onclick="unlockNextLevelAll()">🔓 UNLOCK NEXT LEVEL — ALL TEAMS</button>
+        </div>
+      </div>
+
+      <div class="panel red-accent">
+        <div class="panel-head"><div class="ph-dot red"></div>INDIVIDUAL TEAM LEVEL</div>
+        <div class="panel-body">
+          <div class="section-label">SELECT TEAM</div>
+          <select class="ctrl-select" id="teamSelectLevel">
+            <option value="">-- SELECT TEAM --</option>
+          </select>
+          <div class="section-label">JUMP TO LEVEL</div>
+          <input type="number" class="num-input" id="teamJumpLevel" placeholder="Enter level number (1-16)" min="1" max="16">
+          <div class="ctrl-grid" style="margin-bottom:8px">
+            <button class="ctrl-btn blue" onclick="jumpTeamLevel()">↪ JUMP TO LEVEL</button>
+            <button class="ctrl-btn green" onclick="unlockNextTeam()">🔓 UNLOCK NEXT</button>
+          </div>
+          <div class="divider"></div>
+          <div class="section-label">DANGER ZONE</div>
+          <div class="ctrl-grid">
+            <button class="ctrl-btn red danger-btn" onclick="resetTeamProgress()">↺ RESET PROGRESS</button>
+            <button class="ctrl-btn orange" onclick="skipBrokenPuzzle()">⏭ SKIP PUZZLE</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: ALERTS -->
+  <div class="tab-pane" id="tab-alerts">
+    <div class="admin-grid">
+      <div class="panel yellow-accent">
+        <div class="panel-head"><div class="ph-dot yellow"></div>PRESET ALERTS (BROADCAST TO ALL)</div>
+        <div class="panel-body">
+          <div class="alert-grid">
+            <button class="alert-preset warn" onclick="sendPresetAlert('WARNING','Firewall Breached')">⚠ [WARNING] Firewall Breached</button>
+            <button class="alert-preset danger" onclick="sendPresetAlert('ALERT','Enemy Trace Detected')">🚨 [ALERT] Enemy Trace Detected</button>
+            <button class="alert-preset danger" onclick="sendPresetAlert('DANGER','Upload Speed Increased')">⬆ [DANGER] Upload Speed Increased</button>
+            <button class="alert-preset notice" onclick="sendPresetAlert('NOTICE','Ghost Relay Weakening')">👻 [NOTICE] Ghost Relay Weakening</button>
+            <button class="alert-preset critical" onclick="sendPresetAlert('CRITICAL','Sector Compromised')">💀 [CRITICAL] Sector Compromised</button>
+            <button class="alert-preset warn" onclick="sendPresetAlert('WARNING','Unknown User Access')">👤 [WARNING] Unknown User Access</button>
+            <button class="alert-preset info" onclick="sendPresetAlert('ALERT','Security Cameras Active')">📷 [ALERT] Security Cameras Active</button>
+            <button class="alert-preset danger" onclick="sendPresetAlert('DANGER','Vault Integrity Falling')">🏦 [DANGER] Vault Integrity Falling</button>
+            <button class="alert-preset notice" onclick="sendPresetAlert('NOTICE','Backup Link Restored')">🔗 [NOTICE] Backup Link Restored</button>
+            <button class="alert-preset critical" onclick="sendPresetAlert('CRITICAL','The Void Has Adapted')">🌑 [CRITICAL] The Void Has Adapted</button>
+          </div>
+          <div class="divider"></div>
+          <button class="ctrl-btn red full" onclick="clearAllAlerts()">✕ CLEAR ALL ALERTS</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="ph-dot"></div>SCREEN EFFECTS</div>
+        <div class="panel-body">
+          <div class="section-label">INJECT SCREEN EFFECT (ALL PLAYERS)</div>
+          <div class="ctrl-grid" style="margin-bottom:10px">
+            <button class="ctrl-btn red" onclick="injectEffect('siren')">🚨 RED SIREN</button>
+            <button class="ctrl-btn orange" onclick="injectEffect('blackout')">⬛ BLACKOUT 3s</button>
+            <button class="ctrl-btn purple" onclick="injectEffect('breach')">💀 SYSTEM BREACH</button>
+            <button class="ctrl-btn red" onclick="injectEffect('surge')">⬆ ENEMY SURGE</button>
+            <button class="ctrl-btn blue" onclick="injectEffect('ghost')">👻 GHOST OVERRIDE</button>
+            <button class="ctrl-btn yellow" onclick="injectEffect('countdown')">⏳ FINAL COUNTDOWN</button>
+          </div>
+          <div class="divider"></div>
+          <div class="section-label">CUSTOM BROADCAST MESSAGE</div>
+          <textarea class="broadcast-input" id="alertBroadcast" rows="3" placeholder="Type custom alert or message for all players..."></textarea>
+          <button class="ctrl-btn green full" onclick="sendCustomAlert()">📡 SEND TO ALL PLAYERS</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: SCORES -->
+  <div class="tab-pane" id="tab-scores">
+    <div class="admin-grid">
+      <div class="panel green-accent">
+        <div class="panel-head"><div class="ph-dot"></div>SCORE REWARDS</div>
+        <div class="panel-body">
+          <div class="section-label">SELECT TARGET TEAM</div>
+          <select class="ctrl-select" id="teamSelectScore">
+            <option value="">-- SELECT TEAM --</option>
+          </select>
+          <div class="section-label">REWARD POINTS</div>
+          <div class="ctrl-grid-3" style="margin-bottom:10px">
+            <button class="ctrl-btn green" onclick="modScore(100)">+100 PTS</button>
+            <button class="ctrl-btn green" onclick="modScore(250)">+250 PTS</button>
+            <button class="ctrl-btn green" onclick="modScore(500)">+500 PTS</button>
+          </div>
+          <div class="section-label">CUSTOM REWARD</div>
+          <input type="number" class="num-input" id="customScoreInput" placeholder="Enter custom points amount" min="1">
+          <button class="ctrl-btn green full" onclick="modCustomScore(1)">+ ADD CUSTOM POINTS</button>
+        </div>
+      </div>
+
+      <div class="panel red-accent">
+        <div class="panel-head"><div class="ph-dot red"></div>SCORE PENALTIES</div>
+        <div class="panel-body">
+          <div class="section-label">APPLY PENALTY — SAME TEAM SELECTED</div>
+          <div class="ctrl-grid" style="margin-bottom:10px">
+            <button class="ctrl-btn red" onclick="modScore(-50)">-50 PTS</button>
+            <button class="ctrl-btn red" onclick="modScore(-100)">-100 PTS</button>
+          </div>
+          <div class="section-label">CUSTOM PENALTY</div>
+          <input type="number" class="num-input" id="customPenaltyInput" placeholder="Enter penalty amount" min="1">
+          <button class="ctrl-btn red full" onclick="modCustomScore(-1)">- DEDUCT CUSTOM POINTS</button>
+          <div class="divider"></div>
+          <div class="section-label">THREAT LEVEL MODIFIERS</div>
+          <div class="ctrl-grid">
+            <button class="ctrl-btn orange" onclick="increaseThreat(10)">⬆ THREAT +10%</button>
+            <button class="ctrl-btn red" onclick="increaseThreat(25)">⬆ THREAT +25%</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: TEAMS -->
+  <div class="tab-pane" id="tab-teams">
     <div class="panel full-panel">
       <div class="panel-head"><div class="ph-dot"></div>LIVE TEAM MONITOR</div>
-      <div class="panel-body">
+      <div class="panel-body" style="overflow-x:auto">
         <div id="teamTableWrap">
           <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-dim);text-align:center;padding:30px">LOADING TEAM DATA...</div>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- ADMIN LOG -->
-    <div class="panel full-panel">
-      <div class="panel-head"><div class="ph-dot red"></div>ADMIN ACTION LOG</div>
-      <div class="panel-body">
-        <div class="log-wrap" id="adminLog"></div>
+  <!-- TAB: LOG -->
+  <div class="tab-pane" id="tab-log">
+    <div class="admin-grid">
+      <div class="panel full-panel">
+        <div class="panel-head"><div class="ph-dot red"></div>ADMIN ACTION LOG</div>
+        <div class="panel-body">
+          <div class="log-wrap" id="adminLog" style="max-height:500px"></div>
+        </div>
       </div>
     </div>
   </div>
-</div>
+
+</div><!-- end content -->
 
 <div class="toast" id="toast"></div>
 
 <script type="module">
-// ── Firebase ──────────────────────────────────────────────────
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore,
   collection, doc,
-  onSnapshot, getDocs,
+  onSnapshot, getDocs, updateDoc,
   setDoc, deleteDoc, writeBatch,
-  serverTimestamp, query, orderBy
+  serverTimestamp, query, orderBy, increment
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// 🔥 PASTE YOUR CONFIG HERE
 const firebaseConfig = {
   apiKey: "AIzaSyALDA8Ml23lZnUaiDTZF2AaZC2gnjx4-8I",
   authDomain: "cyber-rescue-ops.firebaseapp.com",
@@ -205,42 +617,73 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
-
-// Admin password — keep this secret
 const ADMIN_PASS = 'VANCE2024';
+const DEFAULT_TIMER = 1800; // 30 minutes default
 
-// ── Matrix ────────────────────────────────────────────────────
-const canvas=document.getElementById('matrix-canvas');
-const ctx=canvas.getContext('2d');
-canvas.width=window.innerWidth; canvas.height=window.innerHeight;
-const cols=Math.floor(canvas.width/16);const drops=Array(cols).fill(1);
-const chars='01アイウ@#$%ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-function dm(){ctx.fillStyle='rgba(2,8,17,0.05)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='rgba(255,34,68,0.6)';ctx.font='13px Share Tech Mono';drops.forEach((y,i)=>{ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*16,y*16);if(y*16>canvas.height&&Math.random()>0.975)drops[i]=0;drops[i]++;});}
+// ── Matrix ─────────────────────────────────────────────────────
+const canvas = document.getElementById('matrix-canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+const cols = Math.floor(canvas.width/16); const drops = Array(cols).fill(1);
+const chars = '01アイウ@#$%ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+function dm(){
+  ctx.fillStyle='rgba(2,8,17,0.05)';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='rgba(255,34,68,0.5)';ctx.font='13px Share Tech Mono';
+  drops.forEach((y,i)=>{ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*16,y*16);if(y*16>canvas.height&&Math.random()>0.975)drops[i]=0;drops[i]++;});
+}
 setInterval(dm,60);
 
-// ── Helpers ───────────────────────────────────────────────────
-function showToast(msg,type='info'){
+// Smartboard matrix
+const sbCanvas = document.getElementById('sb-canvas');
+const sbCtx = sbCanvas.getContext('2d');
+function initSbCanvas(){
+  sbCanvas.width=window.innerWidth; sbCanvas.height=window.innerHeight;
+  const c=Math.floor(sbCanvas.width/16); const d=Array(c).fill(1);
+  function sbDm(){
+    sbCtx.fillStyle='rgba(2,8,17,0.05)';sbCtx.fillRect(0,0,sbCanvas.width,sbCanvas.height);
+    sbCtx.fillStyle='rgba(0,212,255,0.5)';sbCtx.font='13px Share Tech Mono';
+    d.forEach((y,i)=>{sbCtx.fillText(chars[Math.floor(Math.random()*chars.length)],i*16,y*16);if(y*16>sbCanvas.height&&Math.random()>0.975)d[i]=0;d[i]++;});
+  }
+  return setInterval(sbDm,60);
+}
+let sbMatrixInterval = null;
+
+// ── Helpers ────────────────────────────────────────────────────
+function showToast(msg, type='info'){
   const t=document.getElementById('toast');
   t.textContent=msg; t.className='toast '+type; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),3000);
+  setTimeout(()=>t.classList.remove('show'),3200);
 }
-
-function addLog(msg,cls='info'){
+function addLog(msg, cls='info'){
   const wrap=document.getElementById('adminLog');
   const t=new Date().toTimeString().split(' ')[0];
   const line=document.createElement('div'); line.className='log-line '+cls;
   line.innerHTML=`<span class="ts">[${t}]</span>${msg}`;
   wrap.insertBefore(line,wrap.firstChild);
-  // Also write to Firestore logs collection
-  setDoc(doc(collection(db,'logs')), { message:msg, type:cls, ts:serverTimestamp() }).catch(()=>{});
+  setDoc(doc(collection(db,'logs')),{message:msg,type:cls,ts:serverTimestamp()}).catch(()=>{});
 }
-
 function setBtn(id, disabled){ const el=document.getElementById(id); if(el) el.disabled=disabled; }
 
-// ── Auth ──────────────────────────────────────────────────────
+let pendingAction = null;
+function confirmAction(title, body, fn){
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').textContent = body;
+  pendingAction = fn;
+  document.getElementById('confirmModal').classList.add('show');
+}
+window.closeModal = function(){
+  document.getElementById('confirmModal').classList.remove('show');
+  pendingAction = null;
+};
+document.getElementById('modalConfirmBtn').onclick = function(){
+  if(pendingAction) pendingAction();
+  closeModal();
+};
+
+// ── Auth ───────────────────────────────────────────────────────
 window.checkAuth = function(){
-  const val=document.getElementById('authInput').value;
-  if(val===ADMIN_PASS){
+  const val = document.getElementById('authInput').value;
+  if(val === ADMIN_PASS){
     document.getElementById('authOverlay').style.display='none';
     document.getElementById('adminContent').style.display='block';
     initAdminListeners();
@@ -253,52 +696,100 @@ window.checkAuth = function(){
   }
 };
 
-// ── Live Listeners ────────────────────────────────────────────
+// ── Tabs ───────────────────────────────────────────────────────
+window.switchTab = function(tab){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  const tabs = ['mission','timers','levels','alerts','scores','teams','log'];
+  const btns = document.querySelectorAll('.tab-btn');
+  btns[tabs.indexOf(tab)].classList.add('active');
+};
+
+// ── Live Data ──────────────────────────────────────────────────
 let teamsCache = [];
 let lbCache    = [];
+let missionStartTs = null;
 
 function initAdminListeners(){
-  // Watch teams collection in real-time
   onSnapshot(collection(db,'teams'), snap=>{
-    teamsCache = snap.docs.map(d=>d.data());
+    teamsCache = snap.docs.map(d=>({...d.data(), _id: d.id}));
     renderTeamTable();
-    document.getElementById('lastRefresh').textContent=new Date().toTimeString().split(' ')[0];
-    document.getElementById('fb-status').textContent='CONNECTED';
-    document.getElementById('fb-status').style.color='var(--neon-green)';
+    updateStats();
+    populateTeamSelects();
+    document.getElementById('lastRefresh').textContent = new Date().toTimeString().split(' ')[0];
+    document.getElementById('fb-status').textContent = 'CONNECTED';
+    document.getElementById('fb-status').style.color = 'var(--neon-green)';
+    renderSmartboard();
   }, err=>{
-    console.error('Teams listener error:',err);
-    document.getElementById('fb-status').textContent='ERROR';
-    document.getElementById('fb-status').style.color='var(--neon-red)';
+    document.getElementById('fb-status').textContent = 'ERROR';
+    document.getElementById('fb-status').style.color = 'var(--neon-red)';
   });
 
-  // Watch leaderboard
   onSnapshot(query(collection(db,'leaderboard'),orderBy('score','desc')), snap=>{
     lbCache = snap.docs.map(d=>d.data());
     updateStats();
+    renderSmartboard();
   });
 
-  // Watch system/status for display
   onSnapshot(doc(db,'system','status'), snap=>{
     if(!snap.exists()) return;
-    const status = snap.data().missionStatus || 'STANDBY';
-    const paused = snap.data().timerPaused   || false;
+    const data = snap.data();
+    const status = data.missionStatus || 'STANDBY';
+    const paused = data.timerPaused   || false;
+    const locked = data.entriesLocked || false;
     let label = status;
     if(paused && status==='ACTIVE') label='PAUSED';
-    document.getElementById('sys-status').textContent=label;
+    document.getElementById('sys-status').textContent = label;
+    document.getElementById('s-status').textContent = label;
     const col = status==='ACTIVE'&&!paused?'var(--neon-green)':status==='STANDBY'?'var(--text-dim)':'var(--neon-orange)';
-    document.getElementById('sys-status').style.color=col;
+    document.getElementById('sys-status').style.color = col;
+    document.getElementById('s-status').style.color = col;
+    document.getElementById('sys-locked').textContent = locked ? 'YES' : 'NO';
+    document.getElementById('sys-locked').style.color = locked ? 'var(--neon-red)' : 'var(--text-dim)';
+    document.getElementById('sbStatus').textContent = label;
+    document.getElementById('sbStatus').style.color = col;
+    if(data.startedAt) missionStartTs = data.startedAt.toMillis?.() || null;
   });
 }
 
+// Mission elapsed timer for smartboard
+let missionElapsed = 0;
+setInterval(()=>{
+  if(missionStartTs){
+    missionElapsed = Math.floor((Date.now()-missionStartTs)/1000);
+    const m=Math.floor(missionElapsed/60); const s=missionElapsed%60;
+    document.getElementById('sbMissionTimer').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  }
+},1000);
+
 function updateStats(){
-  const active=teamsCache.filter(t=>t.active).length;
-  document.getElementById('s-teams').textContent=teamsCache.length;
-  document.getElementById('s-complete').textContent=lbCache.length;
-  document.getElementById('s-active').textContent=active;
+  const active = teamsCache.filter(t=>t.active).length;
+  const allHints = teamsCache.reduce((a,t)=>a+(t.hintsUsed||0),0);
+  document.getElementById('s-teams').textContent   = teamsCache.length;
+  document.getElementById('s-complete').textContent = lbCache.length;
+  document.getElementById('s-active').textContent  = active;
+  document.getElementById('s-topscore').textContent = lbCache.length>0 ? lbCache[0].score : '—';
+  document.getElementById('s-hints').textContent   = allHints;
+  document.getElementById('sbTeams').textContent   = active;
+  document.getElementById('sbComplete').textContent = lbCache.length;
+}
+
+function populateTeamSelects(){
+  ['teamSelectTimer','teamSelectLevel','teamSelectScore'].forEach(id=>{
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    sel.innerHTML='<option value="">-- SELECT TEAM --</option>';
+    teamsCache.forEach(t=>{
+      const o=document.createElement('option');
+      o.value=t.teamId; o.textContent=`${t.teamName} (${t.teamId})`;
+      sel.appendChild(o);
+    });
+    if(cur) sel.value=cur;
+  });
 }
 
 function renderTeamTable(){
-  updateStats();
   const wrap=document.getElementById('teamTableWrap');
   if(teamsCache.length===0){
     wrap.innerHTML='<div style="font-family:\'Share Tech Mono\',monospace;font-size:12px;color:var(--text-dim);text-align:center;padding:30px">NO TEAMS REGISTERED YET</div>';
@@ -307,126 +798,414 @@ function renderTeamTable(){
   const table=document.createElement('table'); table.className='team-table';
   table.innerHTML=`<thead><tr>
     <th>TEAM ID</th><th>TEAM NAME</th><th>INSTITUTION</th><th>LEADER</th>
-    <th>PLAYERS</th><th>LEVEL</th><th>SCORE</th><th>STATUS</th>
+    <th>LEVEL</th><th>SCORE</th><th>HINTS</th><th>TIME LEFT</th><th>STATUS</th><th>QUICK ACTIONS</th>
   </tr></thead>`;
   const tbody=document.createElement('tbody');
   teamsCache.forEach(t=>{
     const inLb=lbCache.find(e=>e.teamId===t.teamId);
+    const timeLeft=t.timeLeft||0;
+    const m=Math.floor(timeLeft/60); const s=timeLeft%60;
+    const timeStr=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td class="td-mono">${t.teamId}</td>
       <td class="td-name">${t.teamName}</td>
-      <td style="font-size:12px">${t.school||'—'}</td>
-      <td style="font-size:12px">${t.leader||'—'}</td>
-      <td class="td-mono" style="text-align:center">${t.players||1}</td>
-      <td class="td-mono" style="text-align:center">${t.currentLevel||1}/8</td>
-      <td style="font-family:'Orbitron',sans-serif;font-size:12px;color:var(--neon-green)">${t.score||1000}</td>
-      <td><span class="badge ${inLb?'complete':'active'}">${inLb?'COMPLETE':'ACTIVE'}</span></td>
+      <td style="font-size:11px">${t.school||'—'}</td>
+      <td style="font-size:11px">${t.leader||'—'}</td>
+      <td class="td-mono" style="text-align:center">${t.currentLevel||1}</td>
+      <td style="font-family:'Orbitron',sans-serif;font-size:11px;color:var(--neon-green)">${t.score||1000}</td>
+      <td class="td-mono" style="text-align:center">${t.hintsUsed||0}</td>
+      <td class="td-mono" style="color:${timeLeft>300?'var(--neon-green)':timeLeft>0?'var(--neon-orange)':'var(--neon-red)'}">${timeStr}</td>
+      <td><span class="badge ${inLb?'complete':t.active?'active':'paused'}">${inLb?'COMPLETE':t.active?'ACTIVE':'IDLE'}</span></td>
+      <td>
+        <div class="td-timer-btns">
+          <button class="td-timer-btn" onclick="quickTimeTeam('${t.teamId}',60)">+1m</button>
+          <button class="td-timer-btn red" onclick="quickTimeTeam('${t.teamId}',-60)">-1m</button>
+          <button class="td-timer-btn" onclick="quickScoreTeam('${t.teamId}',100)">+100</button>
+          <button class="td-timer-btn red" onclick="quickScoreTeam('${t.teamId}',-50)">-50</button>
+        </div>
+      </td>
     `;
     tbody.appendChild(tr);
   });
   table.appendChild(tbody); wrap.innerHTML=''; wrap.appendChild(table);
 }
 
-// ── Mission Controls (all write to Firestore → syncs all devices) ──
+function renderSmartboard(){
+  const sb = document.getElementById('sbLeaderboard');
+  if(!sb) return;
+  const top10 = lbCache.slice(0,10);
+  sb.innerHTML = '';
+  if(top10.length===0){
+    sb.innerHTML='<div style="font-family:\'Share Tech Mono\',monospace;color:var(--text-dim);font-size:11px">AWAITING COMPLETIONS...</div>';
+    return;
+  }
+  top10.forEach((e,i)=>{
+    const div=document.createElement('div'); div.className='sb-rank-row';
+    const rankClass = i<3 ? 'r'+(i+1) : '';
+    div.innerHTML=`
+      <div class="sb-rank ${rankClass}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div>
+      <div class="sb-team">${e.teamName}<div style="font-size:10px;color:var(--text-dim);font-family:Share Tech Mono">${e.school||''}</div></div>
+      <div class="sb-score">${e.score}</div>
+    `;
+    sb.appendChild(div);
+  });
+}
 
+// ── Mission Controls ───────────────────────────────────────────
 window.launchMission = async function(){
-  setBtn('btnLaunch',true);
-  try {
-    await setDoc(doc(db,'system','status'),{
-      missionStatus: 'ACTIVE',
-      timerPaused:   false,
-      forceEnd:      false,
-      startedAt:     serverTimestamp()
-    });
-    document.getElementById('sys-status').textContent='ACTIVE';
-    addLog('Mission launched for all teams','success');
-    showToast('✓ MISSION LAUNCHED','success');
-  } catch(err){ console.error(err); showToast('⚠ FIREBASE ERROR','error'); }
-  setBtn('btnLaunch',false);
+  confirmAction('LAUNCH MISSION','This will start the mission for all teams. Ready to launch?', async()=>{
+    setBtn('btnLaunch',true);
+    try {
+      await setDoc(doc(db,'system','status'),{
+        missionStatus:'ACTIVE', timerPaused:false, forceEnd:false,
+        startedAt:serverTimestamp(), entriesLocked:false
+      });
+      addLog('Mission launched for all teams','success');
+      showToast('✓ MISSION LAUNCHED','success');
+    } catch(e){ showToast('⚠ FIREBASE ERROR','error'); }
+    setBtn('btnLaunch',false);
+  });
 };
 
 window.pauseTimer = async function(){
   setBtn('btnPause',true);
   try {
-    await setDoc(doc(db,'system','status'),{ timerPaused:true, missionStatus:'ACTIVE' },{ merge:true });
-    addLog('Global timer paused by admin','warn');
+    await setDoc(doc(db,'system','status'),{timerPaused:true,missionStatus:'ACTIVE'},{merge:true});
+    addLog('Global timer paused','warn');
     showToast('⏸ TIMER PAUSED','info');
-  } catch(err){ console.error(err); showToast('⚠ FIREBASE ERROR','error'); }
+  } catch(e){ showToast('⚠ FIREBASE ERROR','error'); }
   setBtn('btnPause',false);
 };
 
 window.resumeTimer = async function(){
   setBtn('btnResume',true);
   try {
-    await setDoc(doc(db,'system','status'),{ timerPaused:false, missionStatus:'ACTIVE' },{ merge:true });
-    addLog('Global timer resumed by admin','info');
+    await setDoc(doc(db,'system','status'),{timerPaused:false,missionStatus:'ACTIVE'},{merge:true});
+    addLog('Global timer resumed','info');
     showToast('▶ TIMER RESUMED','info');
-  } catch(err){ console.error(err); showToast('⚠ FIREBASE ERROR','error'); }
+  } catch(e){ showToast('⚠ FIREBASE ERROR','error'); }
   setBtn('btnResume',false);
 };
 
+window.lockEntries = async function(){
+  await setDoc(doc(db,'system','status'),{entriesLocked:true},{merge:true});
+  addLog('New entries locked by admin','warn');
+  showToast('🔒 ENTRIES LOCKED','warn');
+};
+
+window.unlockEntries = async function(){
+  await setDoc(doc(db,'system','status'),{entriesLocked:false},{merge:true});
+  addLog('Entries unlocked by admin','info');
+  showToast('🔓 ENTRIES UNLOCKED','info');
+};
+
+window.restartTimer = async function(){
+  confirmAction('RESTART TIMER','This will restart the global timer for all teams.', async()=>{
+    await setDoc(doc(db,'system','status'),{startedAt:serverTimestamp()},{merge:true});
+    addLog('Timer restarted by admin','warn');
+    showToast('↺ TIMER RESTARTED','warn');
+  });
+};
+
 window.forceEndGame = async function(){
-  if(!confirm('Force end game for ALL teams? This cannot be undone.')) return;
-  setBtn('btnForce',true);
-  try {
-    await setDoc(doc(db,'system','status'),{ forceEnd:true, missionStatus:'ENDED' },{ merge:true });
-    addLog('Game force-ended by admin','danger');
-    showToast('■ GAME FORCE ENDED','error');
-  } catch(err){ console.error(err); showToast('⚠ FIREBASE ERROR','error'); }
-  setBtn('btnForce',false);
+  confirmAction('FORCE END GAME','⚠ This will immediately end the mission for ALL teams. Cannot be undone!', async()=>{
+    setBtn('btnForce',true);
+    try {
+      await setDoc(doc(db,'system','status'),{forceEnd:true,missionStatus:'ENDED'},{merge:true});
+      addLog('Game force-ended by admin','danger');
+      showToast('■ GAME FORCE ENDED','error');
+    } catch(e){ showToast('⚠ FIREBASE ERROR','error'); }
+    setBtn('btnForce',false);
+  });
 };
 
 window.resetAllTeams = async function(){
-  if(!confirm('CONFIRM: Reset ALL team data? This will delete all teams and leaderboard entries.')) return;
-  setBtn('btnReset',true);
-  try {
-    const batch = writeBatch(db);
-    const teamSnap = await getDocs(collection(db,'teams'));
-    teamSnap.docs.forEach(d => batch.delete(d.ref));
-    const lbSnap = await getDocs(collection(db,'leaderboard'));
-    lbSnap.docs.forEach(d => batch.delete(d.ref));
-    // Reset system status
-    batch.set(doc(db,'system','status'),{
-      missionStatus:'STANDBY', timerPaused:false, forceEnd:false, startedAt:null
-    });
-    await batch.commit();
-    addLog('ALL TEAM DATA RESET — Firestore cleared','danger');
-    showToast('↺ ALL DATA RESET','error');
-  } catch(err){ console.error(err); showToast('⚠ FIREBASE ERROR','error'); }
-  setBtn('btnReset',false);
+  confirmAction('RESET ALL DATA','☠ This will DELETE all teams and leaderboard data. This is irreversible!', async()=>{
+    setBtn('btnReset',true);
+    try {
+      const batch=writeBatch(db);
+      (await getDocs(collection(db,'teams'))).docs.forEach(d=>batch.delete(d.ref));
+      (await getDocs(collection(db,'leaderboard'))).docs.forEach(d=>batch.delete(d.ref));
+      batch.set(doc(db,'system','status'),{missionStatus:'STANDBY',timerPaused:false,forceEnd:false,startedAt:null});
+      await batch.commit();
+      addLog('ALL TEAM DATA RESET — Firestore cleared','danger');
+      showToast('↺ ALL DATA RESET','error');
+    } catch(e){ showToast('⚠ FIREBASE ERROR','error'); }
+    setBtn('btnReset',false);
+  });
 };
 
-// ── Export CSV from Firestore data ────────────────────────────
+// ── Special Events ─────────────────────────────────────────────
+async function writeEffect(type){
+  await setDoc(doc(db,'system','status'),{screenEffect:type, effectTs:serverTimestamp()},{merge:true});
+}
+
+window.triggerGlitch     = ()=>{ writeEffect('glitch');     addLog('Glitch event injected (Lvl10)','warn');    showToast('👾 GLITCH INJECTED','warn'); };
+window.triggerYellowAlert= ()=>{ writeEffect('yellowAlert');addLog('Yellow alert triggered (Lvl16)','warn');   showToast('⚡ YELLOW ALERT','warn'); };
+window.triggerSiren      = ()=>{ writeEffect('siren');      addLog('Red siren mode activated','danger');       showToast('🚨 RED SIREN','error'); };
+window.triggerBlackout   = ()=>{ writeEffect('blackout');   addLog('Blackout 3s injected','warn');             showToast('⬛ BLACKOUT','warn'); };
+window.triggerBreach     = ()=>{ writeEffect('breach');     addLog('Fake breach popup sent','warn');           showToast('💀 BREACH POPUP','error'); };
+window.triggerEnemySurge = ()=>{ writeEffect('surge');      addLog('Enemy upload surge injected','danger');    showToast('⬆ ENEMY SURGE','error'); };
+window.triggerGhostMsg   = ()=>{ writeEffect('ghost');      addLog('Ghost override message sent','info');      showToast('👻 GHOST MSG','info'); };
+window.triggerFinalCountdown=()=>{ writeEffect('countdown');addLog('Final countdown mode activated','danger'); showToast('⏳ FINAL COUNTDOWN','error'); };
+window.injectEffect      = (t)=>eval(`trigger${t.charAt(0).toUpperCase()+t.slice(1)}()`);
+
+window.sendBroadcast = async function(){
+  const msg = document.getElementById('broadcastMsg').value.trim();
+  if(!msg){ showToast('⚠ MESSAGE IS EMPTY','error'); return; }
+  await setDoc(doc(db,'system','status'),{messageBroadcast:msg, broadcastTs:serverTimestamp()},{merge:true});
+  addLog(`Broadcast sent: "${msg}"`, 'success');
+  showToast('📡 BROADCAST SENT','success');
+};
+window.clearBroadcast = async function(){
+  await setDoc(doc(db,'system','status'),{messageBroadcast:'',broadcastTs:serverTimestamp()},{merge:true});
+  showToast('✕ BROADCAST CLEARED','info');
+};
+
+// ── Time Controls ──────────────────────────────────────────────
+window.globalTimeAdjust = async function(secs){
+  const label = secs>0 ? `+${secs}s` : `${secs}s`;
+  try {
+    const batch=writeBatch(db);
+    teamsCache.forEach(t=>{
+      const ref=doc(db,'teams',t._id||t.teamId);
+      const newTime=Math.max(0,(t.timeLeft||DEFAULT_TIMER)+secs);
+      batch.update(ref,{timeLeft:newTime});
+    });
+    await batch.commit();
+    addLog(`Global time adjusted ${label} for all teams`,'info');
+    showToast(`⏱ TIME ADJUSTED ${label}`,'info');
+  } catch(e){ showToast('⚠ FIREBASE ERROR','error'); }
+};
+
+window.freezeAllTimers = async function(){
+  await setDoc(doc(db,'system','status'),{timerPaused:true},{merge:true});
+  addLog('All timers frozen','warn');
+  showToast('❄ ALL TIMERS FROZEN','info');
+};
+window.resumeAllTimers = async function(){
+  await setDoc(doc(db,'system','status'),{timerPaused:false},{merge:true});
+  addLog('All timers resumed','info');
+  showToast('▶ ALL TIMERS RESUMED','info');
+};
+
+window.teamTimeAdjust = async function(secs){
+  const teamId = document.getElementById('teamSelectTimer').value;
+  if(!teamId){ showToast('⚠ SELECT A TEAM FIRST','error'); return; }
+  const team = teamsCache.find(t=>t.teamId===teamId);
+  if(!team){ showToast('⚠ TEAM NOT FOUND','error'); return; }
+  const newTime = Math.max(0,(team.timeLeft||DEFAULT_TIMER)+secs);
+  await updateDoc(doc(db,'teams',team._id||teamId),{timeLeft:newTime});
+  addLog(`Team ${team.teamName}: time adjusted ${secs>0?'+':''}${secs}s`,'info');
+  showToast(`⏱ ADJUSTED ${secs>0?'+':''}${secs}s — ${team.teamName}`,'info');
+};
+
+window.setCustomTime = async function(){
+  const teamId = document.getElementById('teamSelectTimer').value;
+  const secs = parseInt(document.getElementById('customTimeSec').value)||0;
+  if(!teamId){ showToast('⚠ SELECT A TEAM FIRST','error'); return; }
+  if(!secs){ showToast('⚠ ENTER VALID SECONDS','error'); return; }
+  const team = teamsCache.find(t=>t.teamId===teamId);
+  if(!team) return;
+  await updateDoc(doc(db,'teams',team._id||teamId),{timeLeft:secs});
+  addLog(`Team ${team.teamName}: time set to ${secs}s`,'success');
+  showToast(`⏱ TIME SET TO ${Math.floor(secs/60)}m ${secs%60}s`,'success');
+};
+
+window.restoreDefaultTimer = async function(){
+  const teamId = document.getElementById('teamSelectTimer').value;
+  if(!teamId){ showToast('⚠ SELECT A TEAM FIRST','error'); return; }
+  const team = teamsCache.find(t=>t.teamId===teamId);
+  if(!team) return;
+  await updateDoc(doc(db,'teams',team._id||teamId),{timeLeft:DEFAULT_TIMER});
+  addLog(`Team ${team.teamName}: timer restored to default`,'success');
+  showToast('↺ DEFAULT TIMER RESTORED','success');
+};
+
+window.quickTimeTeam = async function(teamId, secs){
+  const team = teamsCache.find(t=>t.teamId===teamId);
+  if(!team) return;
+  const newTime = Math.max(0,(team.timeLeft||DEFAULT_TIMER)+secs);
+  await updateDoc(doc(db,'teams',team._id||teamId),{timeLeft:newTime});
+  showToast(`⏱ ${secs>0?'+':''}${secs}s — ${team.teamName}`,'info');
+};
+
+// ── Level Controls ─────────────────────────────────────────────
+window.forceAllLevel = async function(){
+  const lvl = parseInt(document.getElementById('globalLevelSelect').value);
+  if(!lvl){ showToast('⚠ SELECT A LEVEL','error'); return; }
+  confirmAction('FORCE ALL TO LEVEL '+lvl,`Jump all teams to Level ${lvl}? This overrides current progress.`, async()=>{
+    const batch=writeBatch(db);
+    teamsCache.forEach(t=>batch.update(doc(db,'teams',t._id||t.teamId),{currentLevel:lvl}));
+    await batch.commit();
+    await setDoc(doc(db,'system','status'),{globalLevel:lvl},{merge:true});
+    addLog(`All teams forced to Level ${lvl}`,'warn');
+    showToast(`⚡ ALL TEAMS → LEVEL ${lvl}`,'warn');
+  });
+};
+
+window.unlockNextLevelAll = async function(){
+  const batch=writeBatch(db);
+  teamsCache.forEach(t=>{
+    const nextLvl=(t.currentLevel||1)+1;
+    batch.update(doc(db,'teams',t._id||t.teamId),{currentLevel:nextLvl});
+  });
+  await batch.commit();
+  addLog('Next level unlocked for all teams','info');
+  showToast('🔓 NEXT LEVEL UNLOCKED — ALL','success');
+};
+
+window.jumpTeamLevel = async function(){
+  const teamId = document.getElementById('teamSelectLevel').value;
+  const lvl = parseInt(document.getElementById('teamJumpLevel').value);
+  if(!teamId){ showToast('⚠ SELECT A TEAM FIRST','error'); return; }
+  if(!lvl){ showToast('⚠ ENTER A LEVEL NUMBER','error'); return; }
+  const team = teamsCache.find(t=>t.teamId===teamId);
+  if(!team) return;
+  await updateDoc(doc(db,'teams',team._id||teamId),{currentLevel:lvl});
+  addLog(`Team ${team.teamName} jumped to Level ${lvl}`,'info');
+  showToast(`↪ ${team.teamName} → LEVEL ${lvl}`,'info');
+};
+
+window.unlockNextTeam = async function(){
+  const teamId = document.getElementById('teamSelectLevel').value;
+  if(!teamId){ showToast('⚠ SELECT A TEAM FIRST','error'); return; }
+  const team = teamsCache.find(t=>t.teamId===teamId);
+  if(!team) return;
+  const nextLvl=(team.currentLevel||1)+1;
+  await updateDoc(doc(db,'teams',team._id||teamId),{currentLevel:nextLvl});
+  addLog(`Team ${team.teamName} unlocked Level ${nextLvl}`,'success');
+  showToast(`🔓 ${team.teamName} → LEVEL ${nextLvl}`,'success');
+};
+
+window.resetTeamProgress = async function(){
+  const teamId = document.getElementById('teamSelectLevel').value;
+  if(!teamId){ showToast('⚠ SELECT A TEAM FIRST','error'); return; }
+  const team = teamsCache.find(t=>t.teamId===teamId);
+  if(!team) return;
+  confirmAction('RESET TEAM PROGRESS',`Reset ${team.teamName} back to Level 1?`, async()=>{
+    await updateDoc(doc(db,'teams',team._id||teamId),{currentLevel:1,score:1000,hintsUsed:0,timeLeft:DEFAULT_TIMER});
+    addLog(`Team ${team.teamName} progress reset to Level 1`,'danger');
+    showToast(`↺ ${team.teamName} RESET`,'error');
+  });
+};
+
+window.skipBrokenPuzzle = async function(){
+  const teamId = document.getElementById('teamSelectLevel').value;
+  if(!teamId){ showToast('⚠ SELECT A TEAM FIRST','error'); return; }
+  const team = teamsCache.find(t=>t.teamId===teamId);
+  if(!team) return;
+  const nextLvl=(team.currentLevel||1)+1;
+  await updateDoc(doc(db,'teams',team._id||teamId),{currentLevel:nextLvl});
+  addLog(`Team ${team.teamName} puzzle skipped → Level ${nextLvl}`,'warn');
+  showToast(`⏭ PUZZLE SKIPPED — LEVEL ${nextLvl}`,'warn');
+};
+
+// ── Alerts ─────────────────────────────────────────────────────
+window.sendPresetAlert = async function(type, message){
+  await setDoc(doc(db,'system','status'),{
+    customAlert:{type, message}, alertTs:serverTimestamp()
+  },{merge:true});
+  addLog(`Alert sent [${type}]: ${message}`,'warn');
+  showToast(`📡 [${type}] SENT`,'warn');
+};
+
+window.clearAllAlerts = async function(){
+  await setDoc(doc(db,'system','status'),{customAlert:null, alertTs:serverTimestamp()},{merge:true});
+  addLog('All alerts cleared','info');
+  showToast('✕ ALERTS CLEARED','info');
+};
+
+window.sendCustomAlert = async function(){
+  const msg = document.getElementById('alertBroadcast').value.trim();
+  if(!msg){ showToast('⚠ MESSAGE EMPTY','error'); return; }
+  await setDoc(doc(db,'system','status'),{messageBroadcast:msg, broadcastTs:serverTimestamp()},{merge:true});
+  addLog(`Custom alert: "${msg}"`, 'success');
+  showToast('📡 ALERT SENT','success');
+};
+
+// ── Score Controls ──────────────────────────────────────────────
+window.modScore = async function(pts){
+  const teamId = document.getElementById('teamSelectScore').value;
+  if(!teamId){ showToast('⚠ SELECT A TEAM FIRST','error'); return; }
+  const team = teamsCache.find(t=>t.teamId===teamId);
+  if(!team) return;
+  const newScore = Math.max(0,(team.score||1000)+pts);
+  await updateDoc(doc(db,'teams',team._id||teamId),{score:newScore});
+  addLog(`Team ${team.teamName}: score ${pts>0?'+':''}${pts} → ${newScore}`,'success');
+  showToast(`${pts>0?'+':''}${pts} PTS — ${team.teamName}`,'success');
+};
+
+window.modCustomScore = async function(sign){
+  const teamId = document.getElementById('teamSelectScore').value;
+  const val = parseInt(sign===1 ? document.getElementById('customScoreInput').value : document.getElementById('customPenaltyInput').value)||0;
+  if(!teamId){ showToast('⚠ SELECT A TEAM FIRST','error'); return; }
+  if(!val){ showToast('⚠ ENTER VALID AMOUNT','error'); return; }
+  await modScore(sign*val);
+};
+
+window.quickScoreTeam = async function(teamId, pts){
+  const team = teamsCache.find(t=>t.teamId===teamId);
+  if(!team) return;
+  const newScore = Math.max(0,(team.score||1000)+pts);
+  await updateDoc(doc(db,'teams',team._id||teamId),{score:newScore});
+  showToast(`${pts>0?'+':''}${pts} — ${team.teamName}`,pts>0?'success':'error');
+};
+
+window.increaseThreat = async function(pct){
+  const teamId = document.getElementById('teamSelectScore').value;
+  if(!teamId){ showToast('⚠ SELECT A TEAM FIRST','error'); return; }
+  const team = teamsCache.find(t=>t.teamId===teamId);
+  if(!team) return;
+  const newThreat = Math.min(100,(team.threatLevel||0)+pct);
+  await updateDoc(doc(db,'teams',team._id||teamId),{threatLevel:newThreat});
+  addLog(`Team ${team.teamName}: threat level +${pct}% → ${newThreat}%`,'danger');
+  showToast(`⬆ THREAT +${pct}% — ${team.teamName}`,'error');
+};
+
+// ── Export CSV ──────────────────────────────────────────────────
 window.exportCSV = async function(){
   try {
-    const [lbSnap, teamSnap] = await Promise.all([
+    const [lbSnap,teamSnap] = await Promise.all([
       getDocs(query(collection(db,'leaderboard'),orderBy('score','desc'))),
       getDocs(collection(db,'teams'))
     ]);
-    const lb=lbSnap.docs.map(d=>d.data());
-    const teams=teamSnap.docs.map(d=>d.data());
-    let csv='RANK,TEAM_NAME,SCHOOL,LEADER,PLAYERS,SCORE,TIME_LEFT,HINTS_USED,STATUS\n';
+    const lb=lbSnap.docs.map(d=>d.data()); const teams=teamSnap.docs.map(d=>d.data());
+    let csv='RANK,TEAM_NAME,SCHOOL,LEADER,LEVEL,SCORE,TIME_LEFT,HINTS,STATUS\n';
     lb.forEach((e,i)=>{
       const t=teams.find(t=>t.teamId===e.teamId)||{};
       const m=Math.floor((e.timeLeft||0)/60); const s=(e.timeLeft||0)%60;
-      csv+=`${i+1},${e.teamName},${e.school||''},${t.leader||''},${t.players||1},${e.score},${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${e.hintsUsed||0},COMPLETE\n`;
+      csv+=`${i+1},"${e.teamName}","${e.school||''}","${t.leader||''}",${t.currentLevel||'—'},${e.score},${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${e.hintsUsed||0},COMPLETE\n`;
     });
-    const incomplete=teams.filter(t=>!lb.find(e=>e.teamId===t.teamId));
-    incomplete.forEach(t=>{
-      csv+=`—,${t.teamName},${t.school||''},${t.leader||''},${t.players||1},${t.score||1000},—,—,IN_PROGRESS\n`;
+    teams.filter(t=>!lb.find(e=>e.teamId===t.teamId)).forEach(t=>{
+      csv+=`—,"${t.teamName}","${t.school||''}","${t.leader||''}",${t.currentLevel||1},${t.score||1000},—,—,IN_PROGRESS\n`;
     });
     const blob=new Blob([csv],{type:'text/csv'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
     a.href=url; a.download='curelock_results_'+new Date().toISOString().split('T')[0]+'.csv';
     a.click();
-    addLog('Results exported to CSV from Firestore','success');
+    addLog('Results exported to CSV','success');
     showToast('↓ CSV EXPORTED','success');
-  } catch(err){ console.error(err); showToast('⚠ EXPORT FAILED','error'); }
+  } catch(e){ showToast('⚠ EXPORT FAILED','error'); }
 };
 
-window.addEventListener('resize',()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
+// ── Smartboard ─────────────────────────────────────────────────
+window.openSmartboard = function(){
+  document.getElementById('smartboardOverlay').classList.add('show');
+  sbCanvas.width=window.innerWidth; sbCanvas.height=window.innerHeight;
+  sbMatrixInterval = initSbCanvas();
+  renderSmartboard();
+};
+window.exitSmartboard = function(){
+  document.getElementById('smartboardOverlay').classList.remove('show');
+  if(sbMatrixInterval) clearInterval(sbMatrixInterval);
+};
+
+window.addEventListener('resize',()=>{
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+});
 </script>
 </body>
 </html>
