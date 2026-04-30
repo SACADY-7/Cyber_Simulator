@@ -6,15 +6,20 @@
 <title>CURE-LOCK | Cyber Sentinel Operations</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<!-- ✅ Firebase v9 compat — FIRESTORE ONLY (matches admin + game) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
 <style>
   :root {
-    --neon-blue: #00d4ff;
-    --neon-green: #00ff88;
-    --neon-red: #ff2244;
-    --bg-dark: #020811;
-    --bg-card: rgba(0,20,40,0.7);
+    --neon-blue:    #00d4ff;
+    --neon-green:   #00ff88;
+    --neon-red:     #ff2244;
+    --bg-dark:      #020811;
+    --bg-card:      rgba(0,20,40,0.7);
     --panel-border: rgba(0,212,255,0.2);
-    --text-dim: rgba(0,212,255,0.5);
+    --text-dim:     rgba(0,212,255,0.5);
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
@@ -26,401 +31,275 @@
     cursor: crosshair;
   }
 
-  /* Matrix rain canvas */
-  #matrix-canvas {
-    position: fixed; top:0; left:0; width:100%; height:100%;
-    opacity: 0.07; z-index: 0; pointer-events: none;
-  }
+  /* MATRIX RAIN */
+  #matrix-canvas { position:fixed; top:0; left:0; width:100%; height:100%; opacity:0.07; z-index:0; pointer-events:none; }
 
-  /* Scanline overlay */
+  /* SCANLINES */
   .scanlines {
-    position: fixed; top:0; left:0; width:100%; height:100%;
+    position:fixed; top:0; left:0; width:100%; height:100%;
     background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px);
-    z-index: 1; pointer-events: none;
+    z-index:1; pointer-events:none;
   }
 
-  .content { position: relative; z-index: 2; }
+  .content { position:relative; z-index:2; }
 
-  /* Header */
+  /* HEADER */
   header {
-    padding: 20px 40px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid var(--panel-border);
-    backdrop-filter: blur(10px);
+    padding:20px 40px; display:flex; justify-content:space-between; align-items:center;
+    border-bottom:1px solid var(--panel-border); backdrop-filter:blur(10px); margin-top:36px;
   }
   .logo {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 28px;
-    font-weight: 900;
-    letter-spacing: 6px;
-    text-shadow: 0 0 20px var(--neon-blue), 0 0 40px var(--neon-blue);
-    animation: logoPulse 3s infinite;
+    font-family:'Orbitron',sans-serif; font-size:28px; font-weight:900; letter-spacing:6px;
+    text-shadow:0 0 20px var(--neon-blue),0 0 40px var(--neon-blue); animation:logoPulse 3s infinite;
   }
   @keyframes logoPulse {
-    0%,100% { text-shadow: 0 0 20px var(--neon-blue), 0 0 40px var(--neon-blue); }
-    50% { text-shadow: 0 0 30px var(--neon-blue), 0 0 60px var(--neon-blue), 0 0 80px var(--neon-blue); }
+    0%,100%{ text-shadow:0 0 20px var(--neon-blue),0 0 40px var(--neon-blue); }
+    50%    { text-shadow:0 0 30px var(--neon-blue),0 0 60px var(--neon-blue),0 0 80px var(--neon-blue); }
   }
-  .logo span { color: var(--neon-red); }
-  .header-right {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 12px;
-    text-align: right;
-    color: var(--text-dim);
-  }
-  .status-dot {
-    display: inline-block; width:8px; height:8px;
-    background: var(--neon-green); border-radius:50%;
-    animation: blink 1s infinite; margin-right:6px;
-  }
+  .logo span { color:var(--neon-red); }
+  .header-right { font-family:'Share Tech Mono',monospace; font-size:12px; text-align:right; color:var(--text-dim); }
+  .status-dot { display:inline-block; width:8px; height:8px; background:var(--neon-green); border-radius:50%; animation:blink 1s infinite; margin-right:6px; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
-  /* Hero */
-  .hero {
-    min-height: calc(100vh - 80px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
-    text-align: center;
-    position: relative;
-  }
+  /* HERO */
+  .hero { min-height:calc(100vh - 116px); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; text-align:center; position:relative; }
 
-  /* Radar */
-  .radar-wrap {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%,-50%);
-    width: 600px; height: 600px;
-    opacity: 0.06;
-    pointer-events: none;
-  }
-  .radar-ring {
-    position: absolute; top:50%; left:50%;
-    transform: translate(-50%,-50%);
-    border: 1px solid var(--neon-blue);
-    border-radius: 50%;
-  }
-  .radar-sweep {
-    position: absolute; top:50%; left:50%;
-    width: 300px; height: 2px;
-    background: linear-gradient(90deg, rgba(0,212,255,0.8), transparent);
-    transform-origin: left center;
-    animation: sweep 4s linear infinite;
-  }
+  /* RADAR */
+  .radar-wrap { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:600px; height:600px; opacity:0.06; pointer-events:none; }
+  .radar-ring { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); border:1px solid var(--neon-blue); border-radius:50%; }
+  .radar-sweep { position:absolute; top:50%; left:50%; width:300px; height:2px; background:linear-gradient(90deg,rgba(0,212,255,0.8),transparent); transform-origin:left center; animation:sweep 4s linear infinite; }
   @keyframes sweep { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 
-  /* Transmission block */
+  /* TRANSMISSION BOX */
   .transmission-box {
-    background: var(--bg-card);
-    border: 1px solid var(--panel-border);
-    border-radius: 4px;
-    padding: 40px 60px;
-    max-width: 800px;
-    width: 100%;
-    backdrop-filter: blur(20px);
-    box-shadow: 0 0 40px rgba(0,212,255,0.05), inset 0 0 40px rgba(0,0,0,0.3);
-    position: relative;
-    margin: 20px 0;
+    background:var(--bg-card); border:1px solid var(--panel-border); border-radius:4px;
+    padding:40px 60px; max-width:800px; width:100%; backdrop-filter:blur(20px);
+    box-shadow:0 0 40px rgba(0,212,255,0.05),inset 0 0 40px rgba(0,0,0,0.3); position:relative; margin:20px 0;
   }
   .transmission-box::before {
-    content: '';
-    position: absolute; top:0; left:0; right:0; height:2px;
-    background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
-    animation: scanTop 3s infinite;
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg,transparent,var(--neon-blue),transparent); animation:scanTop 3s infinite;
   }
-  @keyframes scanTop {
-    0%,100%{opacity:0.3} 50%{opacity:1}
-  }
+  @keyframes scanTop { 0%,100%{opacity:0.3} 50%{opacity:1} }
 
-  .decrypting-label {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 4px;
-    color: var(--neon-green);
-    margin-bottom: 16px;
-    animation: blink 1.5s infinite;
-  }
+  .decrypting-label { font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:4px; color:var(--neon-green); margin-bottom:16px; animation:blink 1.5s infinite; }
 
-  .waveform {
-    width: 100%;
-    height: 60px;
-    margin: 20px 0;
-    position: relative;
-    overflow: hidden;
-  }
+  .waveform { width:100%; height:60px; margin:20px 0; overflow:hidden; }
   #waveCanvas { width:100%; height:100%; }
 
   .main-title {
-    font-family: 'Orbitron', sans-serif;
-    font-size: clamp(36px, 8vw, 72px);
-    font-weight: 900;
-    letter-spacing: 8px;
-    line-height: 1.1;
-    margin: 10px 0;
-    background: linear-gradient(180deg, #ffffff 0%, var(--neon-blue) 60%, rgba(0,212,255,0.3) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    filter: drop-shadow(0 0 20px rgba(0,212,255,0.5));
+    font-family:'Orbitron',sans-serif; font-size:clamp(36px,8vw,72px); font-weight:900;
+    letter-spacing:8px; line-height:1.1; margin:10px 0;
+    background:linear-gradient(180deg,#ffffff 0%,var(--neon-blue) 60%,rgba(0,212,255,0.3) 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    filter:drop-shadow(0 0 20px rgba(0,212,255,0.5));
   }
+  .subtitle { font-size:14px; letter-spacing:6px; color:var(--text-dim); margin:10px 0 30px; font-family:'Share Tech Mono',monospace; }
 
-  .subtitle {
-    font-size: 14px;
-    letter-spacing: 6px;
-    color: var(--text-dim);
-    margin: 10px 0 30px;
-    font-family: 'Share Tech Mono', monospace;
-  }
-
-  /* Typewriter rules */
-  .rules-container {
-    display: none;
-    text-align: left;
-    margin: 20px 0;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 13px;
-  }
-  .rules-container.active { display: block; }
-  .rule-line {
-    color: var(--neon-green);
-    margin: 6px 0;
-    opacity: 0;
-    transform: translateX(-10px);
-    transition: all 0.3s;
-  }
+  /* RULES */
+  .rules-container { display:none; text-align:left; margin:20px 0; font-family:'Share Tech Mono',monospace; font-size:13px; }
+  .rules-container.active { display:block; }
+  .rule-line { color:var(--neon-green); margin:6px 0; opacity:0; transform:translateX(-10px); transition:all 0.3s; }
   .rule-line.show { opacity:1; transform:translateX(0); }
-  .rule-prefix { color: var(--neon-blue); }
+  .rule-prefix { color:var(--neon-blue); }
 
-  /* Buttons */
-  .btn-group {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-top: 30px;
-  }
-
+  /* BUTTONS */
+  .btn-group { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:30px; }
   .btn {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 3px;
-    padding: 14px 36px;
-    border: 1px solid currentColor;
-    background: transparent;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s;
-    text-decoration: none;
-    display: inline-block;
-    text-align: center;
+    font-family:'Orbitron',sans-serif; font-size:12px; font-weight:700; letter-spacing:3px;
+    padding:14px 36px; border:1px solid currentColor; background:transparent; cursor:pointer;
+    position:relative; overflow:hidden; transition:all 0.3s; text-decoration:none; display:inline-block; text-align:center;
   }
-  .btn::before {
-    content: '';
-    position: absolute; top:0; left:-100%; width:100%; height:100%;
-    background: currentColor;
-    opacity: 0.1;
-    transition: left 0.3s;
-  }
+  .btn::before { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:currentColor; opacity:0.1; transition:left 0.3s; }
   .btn:hover::before { left:0; }
-  .btn:hover { transform: scale(1.03); box-shadow: 0 0 20px currentColor; }
+  .btn:hover { transform:scale(1.03); box-shadow:0 0 20px currentColor; }
+  .btn-primary { color:var(--neon-blue); box-shadow:0 0 10px rgba(0,212,255,0.2); }
+  .btn-green   { color:var(--neon-green); box-shadow:0 0 10px rgba(0,255,136,0.2); }
+  .btn-red     { color:var(--neon-red); animation:urgentPulse 2s infinite; }
+  @keyframes urgentPulse { 0%,100%{box-shadow:0 0 10px rgba(255,34,68,0.3)} 50%{box-shadow:0 0 25px rgba(255,34,68,0.7)} }
 
-  .btn-primary {
-    color: var(--neon-blue);
-    box-shadow: 0 0 10px rgba(0,212,255,0.2);
-  }
-  .btn-green {
-    color: var(--neon-green);
-    box-shadow: 0 0 10px rgba(0,255,136,0.2);
-  }
-  .btn-red {
-    color: var(--neon-red);
-    animation: urgentPulse 2s infinite;
-  }
-  @keyframes urgentPulse {
-    0%,100%{box-shadow:0 0 10px rgba(255,34,68,0.3)}
-    50%{box-shadow:0 0 25px rgba(255,34,68,0.7)}
-  }
-
-  /* Initiate button */
+  /* INITIATE BUTTON */
   #initiateBtn {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 4px;
-    padding: 18px 50px;
-    border: 2px solid var(--neon-blue);
-    background: transparent;
-    color: var(--neon-blue);
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s;
-    margin: 20px 0;
-    text-transform: uppercase;
+    font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; letter-spacing:4px;
+    padding:18px 50px; border:2px solid var(--neon-blue); background:transparent; color:var(--neon-blue);
+    cursor:pointer; position:relative; overflow:hidden; transition:all 0.3s; margin:20px 0; text-transform:uppercase;
   }
-  #initiateBtn::after {
-    content:'';
-    position:absolute; top:50%; left:50%;
-    transform:translate(-50%,-50%);
-    width:0; height:0;
-    background: rgba(0,212,255,0.1);
-    border-radius:50%;
-    transition: width 0.6s, height 0.6s;
-  }
+  #initiateBtn::after { content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:0; height:0; background:rgba(0,212,255,0.1); border-radius:50%; transition:width 0.6s,height 0.6s; }
   #initiateBtn:hover::after { width:300px; height:300px; }
-  #initiateBtn:hover { box-shadow: 0 0 30px var(--neon-blue); color: #fff; }
+  #initiateBtn:hover { box-shadow:0 0 30px var(--neon-blue); color:#fff; }
+  #initiateBtn:disabled { opacity:0.5; cursor:not-allowed; }
 
-  /* Corner decorations */
-  .corner {
-    position: absolute;
-    width: 20px; height: 20px;
-    border-color: var(--neon-blue);
-    border-style: solid;
-  }
+  /* CORNERS */
+  .corner { position:absolute; width:20px; height:20px; border-color:var(--neon-blue); border-style:solid; }
   .corner-tl { top:10px; left:10px; border-width:2px 0 0 2px; }
   .corner-tr { top:10px; right:10px; border-width:2px 2px 0 0; }
   .corner-bl { bottom:10px; left:10px; border-width:0 0 2px 2px; }
   .corner-br { bottom:10px; right:10px; border-width:0 2px 2px 0; }
 
-  /* Threat alert bar */
+  /* ALERT BAR */
   .alert-bar {
-    position: fixed; top:0; left:0; right:0;
-    background: var(--neon-red);
-    color: #000;
-    text-align: center;
-    padding: 8px;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 11px;
-    letter-spacing: 3px;
-    font-weight: 700;
-    z-index: 100;
-    transform: translateY(-100%);
-    animation: alertDrop 0.5s 2s forwards;
+    position:fixed; top:0; left:0; right:0; background:var(--neon-red); color:#000; text-align:center;
+    padding:8px; font-family:'Orbitron',sans-serif; font-size:11px; letter-spacing:3px; font-weight:700;
+    z-index:100; transform:translateY(-100%); animation:alertDrop 0.5s 2s forwards;
   }
-  @keyframes alertDrop {
-    to { transform: translateY(0); }
+  @keyframes alertDrop { to{ transform:translateY(0); } }
+
+  /* STATS */
+  .stats-bar { display:flex; gap:40px; justify-content:center; margin:20px 0; flex-wrap:wrap; }
+  .stat-item { font-family:'Share Tech Mono',monospace; font-size:11px; text-align:center; }
+  .stat-value { font-family:'Orbitron',sans-serif; font-size:20px; display:block; color:var(--neon-green); text-shadow:0 0 10px var(--neon-green); }
+  .stat-label { color:var(--text-dim); letter-spacing:2px; }
+
+  /* AUDIO INDICATOR */
+  .audio-indicator { display:none; align-items:center; gap:10px; margin:15px 0; font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--neon-green); }
+  .audio-indicator.active { display:flex; }
+  .audio-bar { width:3px; background:var(--neon-green); border-radius:2px; animation:audioAnim 0.5s infinite alternate; }
+  @keyframes audioAnim { from{height:6px} to{height:20px} }
+
+  /* LOADING BAR */
+  .loading-bar-wrap { width:100%; height:2px; background:rgba(0,212,255,0.1); margin:10px 0; overflow:hidden; }
+  .loading-bar-fill { height:100%; background:var(--neon-blue); width:0%; transition:width 0.3s; box-shadow:0 0 10px var(--neon-blue); }
+
+  /* SIDE PANELS */
+  .side-info { position:fixed; top:50%; transform:translateY(-50%); font-family:'Share Tech Mono',monospace; font-size:10px; color:rgba(0,212,255,0.25); z-index:3; line-height:2; }
+  .side-info-left { left:15px; }
+  .side-info-right { right:15px; text-align:right; }
+
+  /* ══ FULLSCREEN TERMINAL ══ */
+  #terminal-overlay {
+    position:fixed; inset:0; background:#000; z-index:9999;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity 0.5s;
+  }
+  #terminal-overlay.active { opacity:1; pointer-events:all; }
+  #terminal-overlay::after {
+    content:''; position:absolute; inset:0;
+    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.03) 2px,rgba(0,255,136,0.03) 4px);
+    pointer-events:none; z-index:1;
+  }
+  @keyframes phosphorFlicker {
+    0%,100%{opacity:1} 92%{opacity:1} 93%{opacity:0.85} 94%{opacity:1} 97%{opacity:0.9} 98%{opacity:1}
+  }
+  #terminal-inner { position:relative; z-index:2; width:100%; max-width:860px; padding:40px 20px; animation:phosphorFlicker 6s infinite; }
+  #terminal-header {
+    font-family:'Share Tech Mono',monospace; font-size:11px; color:rgba(0,255,136,0.4); letter-spacing:3px;
+    border-bottom:1px solid rgba(0,255,136,0.15); padding-bottom:12px; margin-bottom:30px;
+    display:flex; justify-content:space-between;
   }
 
-  /* Stats bar */
-  .stats-bar {
-    display: flex;
-    gap: 40px;
-    justify-content: center;
-    margin: 20px 0;
-    flex-wrap: wrap;
+  /* ✅ SCROLLABLE TERMINAL BODY */
+  #terminal-body {
+    font-family:'Share Tech Mono',monospace; font-size:clamp(13px,1.8vw,16px);
+    line-height:2; color:#00ff88; min-height:320px;
+    max-height:60vh; overflow-y:auto;          /* ← scroll fix */
+    white-space:pre-wrap; word-break:break-word;
   }
-  .stat-item {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    text-align: center;
-  }
-  .stat-value {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 20px;
-    display: block;
-    color: var(--neon-green);
-    text-shadow: 0 0 10px var(--neon-green);
-  }
-  .stat-label { color: var(--text-dim); letter-spacing: 2px; }
+  #terminal-body::-webkit-scrollbar { width:4px; }
+  #terminal-body::-webkit-scrollbar-thumb { background:rgba(0,255,136,0.2); }
 
-  /* Audio indicator */
-  .audio-indicator {
-    display: none;
-    align-items: center;
-    gap: 10px;
-    margin: 15px 0;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 12px;
-    color: var(--neon-green);
-  }
-  .audio-indicator.active { display: flex; }
-  .audio-bar {
-    width: 3px;
-    background: var(--neon-green);
-    border-radius: 2px;
-    animation: audioAnim 0.5s infinite alternate;
-  }
-  @keyframes audioAnim {
-    from { height: 6px; } to { height: 20px; }
-  }
+  /* CURSOR */
+  .t-cursor { display:inline-block; width:10px; height:1.1em; background:#00ff88; vertical-align:bottom; animation:cursorBlink 0.8s step-end infinite; margin-left:2px; }
+  @keyframes cursorBlink { 0%,100%{opacity:1} 50%{opacity:0} }
 
-  /* Glitch effect */
-  .glitch {
-    animation: glitchEffect 0.1s infinite;
-  }
-  @keyframes glitchEffect {
-    0%,100%{clip-path:none; transform:none}
-    33%{clip-path:polygon(0 30%, 100% 30%, 100% 50%, 0 50%); transform:translateX(-3px)}
-    66%{clip-path:polygon(0 60%, 100% 60%, 100% 80%, 0 80%); transform:translateX(3px)}
-  }
+  /* TERMINAL COLOURS */
+  .t-sys   { color:#00d4ff; }
+  .t-warn  { color:#ff2244; }
+  .t-dim   { color:rgba(0,255,136,0.4); }
+  .t-ghost { color:#ffdd00; }
 
-  /* Loading bar */
-  .loading-bar-wrap {
-    width: 100%;
-    height: 2px;
-    background: rgba(0,212,255,0.1);
-    margin: 10px 0;
-    overflow: hidden;
+  /* GLITCH FLASH */
+  @keyframes terminalGlitch {
+    0%{filter:none}
+    10%{filter:hue-rotate(90deg) brightness(1.5); transform:translateX(-4px)}
+    20%{filter:none; transform:none}
+    30%{filter:brightness(0.5)}
+    40%{filter:none}
+    100%{filter:none}
   }
-  .loading-bar-fill {
-    height: 100%;
-    background: var(--neon-blue);
-    width: 0%;
-    transition: width 0.3s;
-    box-shadow: 0 0 10px var(--neon-blue);
-  }
+  .terminal-glitch-flash { animation:terminalGlitch 0.4s forwards; }
 
-  /* Side panels */
-  .side-info {
-    position: fixed;
-    top: 50%;
-    transform: translateY(-50%);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    color: rgba(0,212,255,0.25);
-    z-index: 3;
-    line-height: 2;
+  /* FADE OUT */
+  @keyframes terminalFadeOut {
+    0%{opacity:1;filter:none}
+    40%{opacity:1;filter:brightness(2) hue-rotate(60deg)}
+    60%{opacity:0.6;filter:brightness(3)}
+    100%{opacity:0;filter:brightness(0)}
   }
-  .side-info-left { left: 15px; }
-  .side-info-right { right: 15px; text-align: right; }
+  .terminal-fade-out { animation:terminalFadeOut 0.8s forwards; }
 
-  @media(max-width: 600px) {
-    .transmission-box { padding: 24px 20px; }
-    .side-info { display: none; }
-    header { padding: 15px 20px; }
-    .logo { font-size: 20px; }
+  /* ADMIN BANNER */
+  #admin-mission-banner {
+    position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(100px);
+    background:rgba(255,34,68,0.15); border:1px solid var(--neon-red); color:var(--neon-red);
+    font-family:'Orbitron',sans-serif; font-size:12px; letter-spacing:3px; padding:12px 30px;
+    z-index:200; transition:transform 0.5s; text-align:center;
+  }
+  #admin-mission-banner.show { transform:translateX(-50%) translateY(0); }
+
+  /* BROADCAST TOAST (top-right) */
+  #broadcast-toast {
+    position:fixed; top:60px; right:20px;
+    background:rgba(0,15,30,0.96); border:1px solid var(--neon-blue); color:var(--neon-blue);
+    font-family:'Share Tech Mono',monospace; font-size:12px; letter-spacing:2px;
+    padding:12px 20px; z-index:300; max-width:320px; word-break:break-word;
+    transform:translateX(110%); transition:transform 0.4s;
+  }
+  #broadcast-toast.show { transform:translateX(0); }
+  #broadcast-toast .toast-label { color:var(--neon-green); font-size:10px; letter-spacing:3px; display:block; margin-bottom:4px; }
+
+  /* SOUND TOGGLE */
+  #soundToggle {
+    position:fixed; bottom:20px; right:20px; z-index:500; background:transparent;
+    border:1px solid var(--panel-border); color:var(--text-dim); font-family:'Share Tech Mono',monospace;
+    font-size:10px; letter-spacing:2px; padding:8px 14px; cursor:pointer; transition:all 0.3s;
+  }
+  #soundToggle:hover { border-color:var(--neon-green); color:var(--neon-green); }
+
+  @media(max-width:600px){
+    .transmission-box { padding:24px 20px; }
+    .side-info { display:none; }
+    header { padding:15px 20px; }
+    .logo { font-size:20px; }
+    #terminal-inner { padding:20px 15px; }
+    #terminal-body { font-size:12px; line-height:1.8; }
   }
 </style>
 </head>
 <body>
 
-<div class="alert-bar">⚠ CRITICAL BREACH DETECTED — MED-X RESEARCH LAB — SENTINEL RESPONSE REQUIRED ⚠</div>
+<!-- FULLSCREEN TERMINAL OVERLAY -->
+<div id="terminal-overlay">
+  <div id="terminal-inner">
+    <div id="terminal-header">
+      <span>MED-X SECURE UPLINK // AES-256</span>
+      <span id="tClock">--:--:--</span>
+      <span>NODE: 7-ALPHA // SENTINEL_OPS</span>
+    </div>
+    <div id="terminal-body"><span class="t-cursor" id="tCursor"></span></div>
+  </div>
+</div>
 
+<!-- ADMIN MISSION BANNER -->
+<div id="admin-mission-banner">⚠ ADMIN HAS LAUNCHED THE MISSION — INITIATING SEQUENCE...</div>
+
+<!-- BROADCAST TOAST -->
+<div id="broadcast-toast">
+  <span class="toast-label">⚡ INCOMING BROADCAST</span>
+  <span id="broadcast-text"></span>
+</div>
+
+<!-- MAIN PAGE -->
+<div class="alert-bar">⚠ CRITICAL BREACH DETECTED — MED-X RESEARCH LAB — SENTINEL RESPONSE REQUIRED ⚠</div>
 <canvas id="matrix-canvas"></canvas>
 <div class="scanlines"></div>
 
 <div class="side-info side-info-left">
-  UPLINK: SECURE<br>
-  NODE: 7-ALPHA<br>
-  LAT: 40.7128° N<br>
-  LON: 74.0060° W<br>
-  ENCRYPT: AES-256<br>
-  VPN: ACTIVE<br>
-  TOR: ROUTING
+  UPLINK: SECURE<br>NODE: 7-ALPHA<br>LAT: 40.7128° N<br>
+  LON: 74.0060° W<br>ENCRYPT: AES-256<br>VPN: ACTIVE<br>TOR: ROUTING
 </div>
 <div class="side-info side-info-right">
-  SENTINEL_OPS<br>
-  CLEARANCE: L5<br>
-  PROTOCOL: RED<br>
-  MISSION: ACTIVE<br>
-  UNITS: DEPLOYED<br>
-  FIREWALL: UP<br>
-  STATUS: LIVE
+  SENTINEL_OPS<br>CLEARANCE: L5<br>PROTOCOL: RED<br>
+  MISSION: ACTIVE<br>UNITS: DEPLOYED<br>FIREWALL: UP<br>STATUS: LIVE
 </div>
 
 <div class="content">
@@ -443,37 +322,21 @@
       <div class="corner corner-br"></div>
 
       <div class="decrypting-label" id="decryptLabel">▶ DECRYPTING INCOMING TRANSMISSION...</div>
-
-      <div class="loading-bar-wrap">
-        <div class="loading-bar-fill" id="loadBar"></div>
-      </div>
-
+      <div class="loading-bar-wrap"><div class="loading-bar-fill" id="loadBar"></div></div>
       <canvas class="waveform" id="waveCanvas" height="60"></canvas>
 
       <div class="main-title">CURE-LOCK</div>
       <div class="subtitle">CYBER SENTINEL OPERATIONS — MISSION OMEGA</div>
 
       <div class="stats-bar">
-        <div class="stat-item">
-          <span class="stat-value" id="countTeams">0</span>
-          <span class="stat-label">TEAMS ACTIVE</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-value">30:00</span>
-          <span class="stat-label">MISSION TIME</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-value">8</span>
-          <span class="stat-label">OBJECTIVES</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-value" id="threatPct">87%</span>
-          <span class="stat-label">THREAT LEVEL</span>
-        </div>
+        <div class="stat-item"><span class="stat-value" id="countTeams">0</span><span class="stat-label">TEAMS ACTIVE</span></div>
+        <div class="stat-item"><span class="stat-value">30:00</span><span class="stat-label">MISSION TIME</span></div>
+        <div class="stat-item"><span class="stat-value">8</span><span class="stat-label">OBJECTIVES</span></div>
+        <div class="stat-item"><span class="stat-value" id="threatPct">87%</span><span class="stat-label">THREAT LEVEL</span></div>
       </div>
 
       <div style="text-align:center">
-        <button id="initiateBtn">[ INITIATE TRANSMISSION ]</button>
+        <button id="initiateBtn">[ ESTABLISH UPLINK ]</button>
       </div>
 
       <div class="audio-indicator" id="audioInd">
@@ -483,11 +346,11 @@
         <div class="audio-bar" style="animation-delay:0.3s"></div>
         <div class="audio-bar" style="animation-delay:0.1s"></div>
         <div class="audio-bar" style="animation-delay:0.05s"></div>
-        <span>INCOMING TRANSMISSION FROM: DIRECTOR VANCE</span>
+        <span>INCOMING TRANSMISSION FROM: GHOST</span>
       </div>
 
       <div class="rules-container" id="rulesContainer">
-        <div style="color:var(--neon-red); font-size:11px; letter-spacing:3px; margin-bottom:12px">MISSION PROTOCOLS:</div>
+        <div style="color:var(--neon-red);font-size:11px;letter-spacing:3px;margin-bottom:12px">MISSION PROTOCOLS:</div>
       </div>
 
       <div class="btn-group" id="btnGroup" style="display:none">
@@ -499,70 +362,116 @@
   </div>
 </div>
 
+<button id="soundToggle">🔇 SOUND OFF</button>
+
+<!-- ✅ Point src to your audio file: assets/audio/ambient.mp3 -->
+<audio id="audioAmbient" loop preload="auto">
+  <source src="assets/audio/ambient.mp3" type="audio/mpeg">
+</audio>
+
 <script>
-// System clock
+/* ══════════════════════════════════════════════════════════
+   FIREBASE CONFIG  ←  Paste your project's credentials here
+   CRITICAL: Use Firestore (NOT Realtime Database)
+   This matches the db used in admin.html and game.html
+══════════════════════════════════════════════════════════ */
+const firebaseConfig = {
+  apiKey: "AIzaSyALDA8Ml23lZnUaiDTZF2AaZC2gnjx4-8I",
+  authDomain: "cyber-rescue-ops.firebaseapp.com",
+  projectId: "cyber-rescue-ops",
+  storageBucket: "cyber-rescue-ops.firebasestorage.app",
+  messagingSenderId: "12878094017",
+  appId: "1:12878094017:web:e1caf6bd006beeb49a7e40"
+};
+
+let db = null;
+let firebaseReady = false;
+try {
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();     // ✅ Firestore — NOT firebase.database()
+  firebaseReady = true;
+} catch(e) {
+  console.warn('[CURE-LOCK] Firebase init failed:', e.message);
+}
+
+/* ══ SYSTEM CLOCK ══ */
 function updateClock() {
-  const now = new Date();
-  document.getElementById('sysTime').textContent =
-    'SYS: ' + now.toTimeString().split(' ')[0];
+  const t = new Date().toTimeString().split(' ')[0];
+  const e1 = document.getElementById('sysTime');
+  const e2 = document.getElementById('tClock');
+  if(e1) e1.textContent = 'SYS: ' + t;
+  if(e2) e2.textContent = t;
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-// Matrix rain
+/* ══ MATRIX RAIN — ✅ fixed resize (drops rebuilt) ══ */
 const canvas = document.getElementById('matrix-canvas');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
+const ctx    = canvas.getContext('2d');
+canvas.width  = window.innerWidth;
 canvas.height = window.innerHeight;
-const cols = Math.floor(canvas.width / 16);
-const drops = Array(cols).fill(1);
+let drops = [];
 const chars = '01アイウエオカキクケコサシスセソタチツテトナ@#$%^&*()ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+function initDrops() {
+  const cols = Math.floor(canvas.width / 16);
+  drops = new Array(cols).fill(1);
+}
+initDrops();
+
 function drawMatrix() {
   ctx.fillStyle = 'rgba(2,8,17,0.05)';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#00ff88';
   ctx.font = '14px Share Tech Mono';
-  drops.forEach((y,i) => {
-    const char = chars[Math.floor(Math.random()*chars.length)];
-    ctx.fillText(char, i*16, y*16);
-    if(y*16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+  drops.forEach((y, i) => {
+    const c = chars[Math.floor(Math.random() * chars.length)];
+    ctx.fillText(c, i * 16, y * 16);
+    if(y * 16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
     drops[i]++;
   });
 }
 setInterval(drawMatrix, 50);
 
-// Radar rings
+/* ══ RADAR ══ */
 const rWrap = document.getElementById('radarWrap');
 [280,220,160,100,50].forEach(r => {
   const ring = document.createElement('div');
   ring.className = 'radar-ring';
-  ring.style.width = r*2+'px';
-  ring.style.height = r*2+'px';
+  ring.style.width = ring.style.height = r*2+'px';
   rWrap.appendChild(ring);
 });
-const sweep = document.createElement('div');
-sweep.className = 'radar-sweep';
-rWrap.appendChild(sweep);
+const sweepEl = document.createElement('div');
+sweepEl.className = 'radar-sweep';
+rWrap.appendChild(sweepEl);
 
-// Waveform
-const wc = document.getElementById('waveCanvas');
+/* ══ WAVEFORM — ✅ DPI scale fix ══ */
+const wc   = document.getElementById('waveCanvas');
 const wctx = wc.getContext('2d');
-wc.width = wc.offsetWidth * 2;
-wc.height = 120;
-let wPhase = 0;
+let wPhase    = 0;
 let waveActive = false;
+
+function initWave() {
+  wc.width  = wc.offsetWidth * 2;
+  wc.height = 120;
+  wctx.scale(2, 2);   // ✅ retina/HiDPI sharpness
+}
+initWave();
+
 function drawWave() {
-  wctx.clearRect(0,0,wc.width,wc.height);
+  const W = wc.offsetWidth;
+  const H = 60;
+  wctx.clearRect(0, 0, W, H);
   wctx.strokeStyle = waveActive ? '#00ff88' : '#00d4ff';
-  wctx.lineWidth = 2;
-  wctx.shadowBlur = 8;
+  wctx.lineWidth   = 1.5;
+  wctx.shadowBlur  = 8;
   wctx.shadowColor = waveActive ? '#00ff88' : '#00d4ff';
   wctx.beginPath();
-  for(let x=0;x<wc.width;x++) {
-    const amp = waveActive ? 25 + Math.random()*10 : 15;
+  for(let x = 0; x < W; x++) {
+    const amp  = waveActive ? 25 + Math.random()*10 : 15;
     const freq = waveActive ? 0.03 : 0.02;
-    const y = 60 + Math.sin(x*freq + wPhase)*amp + Math.sin(x*0.05+wPhase*1.3)*(amp*0.3);
-    x===0 ? wctx.moveTo(x,y) : wctx.lineTo(x,y);
+    const y    = 30 + Math.sin(x*freq + wPhase)*amp + Math.sin(x*0.05 + wPhase*1.3)*(amp*0.3);
+    x === 0 ? wctx.moveTo(x,y) : wctx.lineTo(x,y);
   }
   wctx.stroke();
   wPhase += waveActive ? 0.15 : 0.05;
@@ -570,7 +479,7 @@ function drawWave() {
 }
 drawWave();
 
-// Loading bar animation
+/* ══ LOADING BAR ══ */
 let loadPct = 0;
 const loadInterval = setInterval(() => {
   loadPct = Math.min(100, loadPct + Math.random()*3);
@@ -581,22 +490,226 @@ const loadInterval = setInterval(() => {
   }
 }, 80);
 
-// Threat level animation
+/* ══ THREAT LEVEL — Firebase-first, random fallback ══ */
 let threat = 87;
+let threatSynced = false;
 setInterval(() => {
-  threat = Math.max(70, Math.min(99, threat + (Math.random()*4-2)));
-  document.getElementById('threatPct').textContent = Math.round(threat) + '%';
+  if(!threatSynced) {
+    threat = Math.max(70, Math.min(99, threat + (Math.random()*4-2)));
+    document.getElementById('threatPct').textContent = Math.round(threat)+'%';
+  }
 }, 3000);
 
-// Team count animation
-let tc = 0;
-const tcTarget = Math.floor(Math.random()*20)+5;
+/* ══ TEAM COUNT ANIMATION ══ */
+let tc = 0, tcTarget = Math.floor(Math.random()*20)+5;
 const tcInt = setInterval(() => {
-  if(tc < tcTarget) { tc++; document.getElementById('countTeams').textContent = tc; }
+  if(tc < tcTarget){ tc++; document.getElementById('countTeams').textContent = tc; }
   else clearInterval(tcInt);
 }, 100);
 
-// Mission briefing audio + typewriter
+/* ══ AUDIO — ✅ improved user-gesture handling + smooth start ══ */
+let soundEnabled = false;
+let hasUserInteracted = false;
+
+const ambientAudio = document.getElementById('audioAmbient');
+const soundBtn = document.getElementById('soundToggle');
+
+// Detect ANY user interaction
+document.addEventListener("click", () => {
+  hasUserInteracted = true;
+
+  if(soundEnabled && ambientAudio.paused) {
+    ambientAudio.play().catch(()=>{});
+  }
+});
+
+// Toggle button
+soundBtn.addEventListener('click', () => {
+  soundEnabled = !soundEnabled;
+
+  if(soundEnabled){
+    ambientAudio.volume = 0;
+
+    // Only play if user has interacted (browser policy safe)
+    if(hasUserInteracted) {
+      ambientAudio.play().then(() => {
+        // 🔥 Smooth fade-in
+        let v = 0;
+        const fade = setInterval(() => {
+          v += 0.05;
+          ambientAudio.volume = Math.min(v, 0.3);
+          if(v >= 0.3) clearInterval(fade);
+        }, 100);
+      }).catch(()=>{});
+    }
+
+    soundBtn.textContent = '🔊 SOUND ON';
+    soundBtn.style.color = 'var(--neon-green)';
+    soundBtn.style.borderColor = 'var(--neon-green)';
+
+  } else {
+    ambientAudio.pause();
+    ambientAudio.currentTime = 0; // reset audio (optional but cleaner)
+
+    soundBtn.textContent = '🔇 SOUND OFF';
+    soundBtn.style.color = '';
+    soundBtn.style.borderColor = '';
+  }
+});
+/* ══ BROADCAST TOAST ══ */
+let lastBroadcast = '';
+function showBroadcastToast(msg) {
+  if(!msg || msg === lastBroadcast) return;
+  lastBroadcast = msg;
+  const toast = document.getElementById('broadcast-toast');
+  document.getElementById('broadcast-text').textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 4500);
+}
+
+/* ══ TERMINAL SCRIPT (unchanged) ══ */
+const TERMINAL_SCRIPT = [
+  { text:'[UPLINK ESTABLISHED: MED-X BLACK SITE]',                                                                                    cls:'t-sys',   delay:0  },
+  { text:'[STATUS: LEVEL-5 BREACH DETECTED]',                                                                                         cls:'t-warn',  delay:60 },
+  { text:'',                                                                                                                           cls:'',        delay:20 },
+  { text:"> GHOST: Sentinel, link established. I'm Ghost. Med-X Research is under a Zero-Day attack. 'The Void' is liquidating the V-12 Antidote.", cls:'t-ghost', delay:35 },
+  { text:'',                                                                                                                           cls:'',        delay:20 },
+  { text:'> If that progress bar hits 100%, 15 years of cancer research dies tonight.',                                                cls:'t-ghost', delay:40 },
+  { text:'',                                                                                                                           cls:'',        delay:20 },
+  { text:"> I've opened a back-channel for you.",                                                                                      cls:'t-ghost', delay:40 },
+  { text:'',                                                                                                                           cls:'',        delay:20 },
+  { text:"> Don't be a hero \u2014 be a ghost.",                                                                                      cls:'t-ghost', delay:40 },
+  { text:'',                                                                                                                           cls:'',        delay:20 },
+  { text:'> Initiate Protocol: Cure-Lock. NOW.',                                                                                       cls:'t-warn',  delay:40 },
+  { text:'',                                                                                                                           cls:'',        delay:30 },
+  { text:'[REDIRECTING TO SECURE CHANNEL...]',                                                                                         cls:'t-sys',   delay:0  },
+];
+
+let terminalRunning = false;
+
+function launchTerminal(autoRedirect = true) {
+  if(terminalRunning) return;
+  terminalRunning = true;
+
+  // ✅ Start audio on first user interaction (handles autoplay policy)
+  if(soundEnabled) ambientAudio.play().catch(()=>{});
+
+  const overlay = document.getElementById('terminal-overlay');
+  const body    = document.getElementById('terminal-body');
+  const cursor  = document.getElementById('tCursor');
+
+  overlay.classList.add('active');
+  cursor.remove();
+
+  let lineIdx = 0;
+
+  function nextLine() {
+    if(lineIdx >= TERMINAL_SCRIPT.length) {
+      body.appendChild(cursor);
+      if(autoRedirect) finishTerminal();
+      return;
+    }
+    const line = TERMINAL_SCRIPT[lineIdx++];
+
+    if(line.text === '') {
+      body.appendChild(document.createElement('br'));
+      setTimeout(nextLine, 250);
+      return;
+    }
+
+    // ✅ Paragraph pause — slight hold between Ghost lines
+    const pauseAfter = line.text.startsWith('>') ? 600 : 400;
+
+    const span = document.createElement('span');
+    if(line.cls) span.className = line.cls;
+    body.appendChild(span);
+    body.appendChild(cursor);
+
+    let ci = 0;
+    function typeChar() {
+      if(ci < line.text.length) {
+        span.textContent += line.text[ci++];
+        body.scrollTop = body.scrollHeight; // ✅ scroll fix
+        const jitter = line.delay + Math.random()*20 - 5;
+        setTimeout(typeChar, Math.max(5, jitter));
+      } else {
+        body.appendChild(document.createElement('br'));
+        setTimeout(nextLine, pauseAfter);
+      }
+    }
+    typeChar();
+  }
+
+  body.appendChild(cursor);
+  setTimeout(nextLine, 500); // ✅ 500ms delay before first character
+}
+
+/* ══ FINISH TERMINAL — ✅ 4.5s read delay before redirect ══ */
+function finishTerminal() {
+  // ✅ Write to Firestore with correct field names (matches admin panel)
+  if(firebaseReady && db) {
+    db.collection('system').doc('status').update({
+      missionStarted:   true,
+      missionStartedAt: Date.now(),
+      missionStatus:    'started'
+    }).catch(console.warn);
+  }
+
+  const overlay = document.getElementById('terminal-overlay');
+
+  // ✅ KEY FIX: wait 4.5 seconds so users can actually read the final lines
+  setTimeout(() => {
+    overlay.classList.add('terminal-glitch-flash');
+    setTimeout(() => {
+      overlay.classList.remove('terminal-glitch-flash');
+      overlay.classList.add('terminal-fade-out');
+      setTimeout(() => {
+        window.location.href = 'game.html';
+      }, 900);
+    }, 400);
+  }, 4500);
+}
+
+/* ══ ESTABLISH UPLINK BUTTON ══ */
+document.getElementById('initiateBtn').addEventListener('click', () => {
+  document.getElementById('initiateBtn').disabled = true;
+  launchTerminal(true);
+});
+
+/* ══ FIRESTORE LISTENER — ✅ unified with admin/game ══
+   Responds to:
+     missionStatus / launchMission → trigger terminal for all clients
+     messageBroadcast              → show toast
+     threatLevel                   → sync threat stat
+══════════════════════════════════════════════════════ */
+if(firebaseReady && db) {
+  db.collection('system').doc('status').onSnapshot((doc) => {
+    if(!doc.exists) return;
+    const val = doc.data();
+
+    // Threat level sync from admin
+    if(val.threatLevel !== undefined) {
+      threatSynced = true;
+      document.getElementById('threatPct').textContent = val.threatLevel + '%';
+    }
+
+    // Broadcast message toast
+    if(val.messageBroadcast) showBroadcastToast(val.messageBroadcast);
+
+    // Admin launches mission → all landing-page clients auto-trigger
+    const shouldLaunch = val.launchMission === true || val.missionStatus === 'started';
+    if(shouldLaunch && !terminalRunning) {
+      const banner = document.getElementById('admin-mission-banner');
+      banner.classList.add('show');
+      setTimeout(() => {
+        banner.classList.remove('show');
+        launchTerminal(true);
+      }, 2000);
+    }
+  }, err => console.warn('[CURE-LOCK] Firestore error:', err));
+}
+
+/* ══ MISSION RULES TOGGLE ══ */
 const missionRules = [
   'No page reloads — progress will be lost',
   'Work as a team — coordinate all decisions',
@@ -605,44 +718,27 @@ const missionRules = [
   'Combine all intel clues for final lock code',
   'Finish before The Void completes upload'
 ];
-
-let briefingPlaying = false;
-document.getElementById('initiateBtn').addEventListener('click', () => {
-  if(briefingPlaying) return;
-  briefingPlaying = true;
-  document.getElementById('initiateBtn').textContent = '[ TRANSMISSION ACTIVE ]';
-  document.getElementById('initiateBtn').style.color = '#00ff88';
-  document.getElementById('initiateBtn').style.borderColor = '#00ff88';
-  document.getElementById('audioInd').classList.add('active');
-  waveActive = true;
-
-  // Typewriter for rules
-  setTimeout(() => {
-    document.getElementById('rulesContainer').classList.add('active');
+function toggleRules() {
+  const rc = document.getElementById('rulesContainer');
+  if(rc.classList.contains('active')){ rc.classList.remove('active'); return; }
+  rc.classList.add('active');
+  if(rc.querySelectorAll('.rule-line').length === 0) {
     missionRules.forEach((rule, i) => {
       const div = document.createElement('div');
       div.className = 'rule-line';
       div.innerHTML = `<span class="rule-prefix">[${String(i+1).padStart(2,'0')}] </span>${rule}`;
-      document.getElementById('rulesContainer').appendChild(div);
-      setTimeout(() => div.classList.add('show'), i * 600 + 500);
+      rc.appendChild(div);
+      setTimeout(() => div.classList.add('show'), i*300 + 100);
     });
-    setTimeout(() => {
-      document.getElementById('btnGroup').style.display = 'flex';
-      document.getElementById('audioInd').classList.remove('active');
-      waveActive = false;
-    }, missionRules.length * 600 + 1000);
-  }, 1500);
-});
-
-function toggleRules() {
-  const rc = document.getElementById('rulesContainer');
-  rc.classList.toggle('active');
+  }
 }
 
+/* ══ RESIZE — ✅ drops rebuilt, wave re-scaled ══ */
 window.addEventListener('resize', () => {
-  canvas.width = window.innerWidth;
+  canvas.width  = window.innerWidth;
   canvas.height = window.innerHeight;
-  wc.width = wc.offsetWidth * 2;
+  initDrops();   // ✅ rebuild drops array for new column count
+  initWave();    // ✅ re-apply DPI scale
 });
 </script>
 </body>
